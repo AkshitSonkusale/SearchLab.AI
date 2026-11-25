@@ -2,15 +2,6 @@
 
 Semantic search with answers. Upload documents, ask questions in plain English, and get answers with the exact passage they came from. If the answer isn't in your documents, it says so.
 
-Team 17, Anurag University.
-
-| Name | Roll No. | Role |
-| --- | --- | --- |
-| Srikruthika Katta | 23EG107A30 | Deployment |
-| Sindhuja K | 23EG107A23 | Testing |
-| Nandhishwar Reddy G | 24EG510E02 | Backend + Database |
-| Akshit Sonkusale | 23EG110D03 | Frontend + UI/UX |
-
 ## What's in this repo
 
 | Folder | What it is |
