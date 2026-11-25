@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :focus-visible { outline: 2px solid #1D5B47; outline-offset: 2px; }
+  a { color: #1D5B47; }
+  a:hover { color: #123D30; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-brand px-5 text-[15px] font-semibold text-white no-underline transition-all
+      hover:bg-brand-dark hover:text-white hover:shadow-[0_2px_8px_rgba(29,91,71,0.25)] active:translate-y-px motion-reduce:transition-none;
+  }
+  .btn2 {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-[#B9C2BC] bg-white px-4 text-[15px] font-medium text-ink no-underline transition-all
+      hover:border-brand hover:bg-[#F4F8F5] hover:text-brand active:translate-y-px motion-reduce:transition-none;
+  }
+  .btn-sm { @apply min-h-[36px] text-sm; }
+  .inp {
+    @apply min-h-[44px] rounded-md border border-[#B9C2BC] bg-white px-3.5 text-[15px] font-normal text-ink transition-colors
+      hover:border-[#7D8C84] focus:border-brand focus:outline-none focus:ring-[3px] focus:ring-brand/15;
+  }
+  .sheet { @apply rounded-md border border-rule bg-white; }
+  .caption { @apply px-3 pb-1.5 pt-[18px] text-left font-serif text-[21px] font-medium; }
+  .th { @apply px-3 py-2.5 text-left text-sm font-semibold text-graphite; }
+  .td { @apply border-t border-rule px-3 py-3.5 align-top transition-colors; }
+  tbody tr:hover .td { @apply bg-[#F6F9F7]; }
+  .row-link {
+    @apply text-ink no-underline transition-colors hover:bg-white hover:text-ink hover:shadow-[-12px_0_0_#fff,12px_0_0_#fff];
+  }
+  .sr-only-x { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
+
+@keyframes caret { 50% { opacity: 0; } }
+.caret { animation: caret 1s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }

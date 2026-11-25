@@ -1,0 +1,2345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SearchLab.AI – Get answers from your own documents</title>
+  <meta name="description" content="SearchLab.AI turns your documents into a searchable knowledge base. Ask any question, get a cited answer with the exact page it came from." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #EEF1EE;
+      --paper-rgb: 238,241,238;
+      --white: #ffffff;
+      --ink: #1E2528;
+      --graphite: #566064;
+      --muted: #8A9499;
+      --rule: #D6DCD7;
+      --rule-dark: #BEC8BF;
+      --brand: #1D5B47;
+      --brand-dark: #123D30;
+      --brand-light: #EBF4F0;
+      --brand-mid: #2E7A60;
+      --highlight: #F5E27C;
+      --spacing: 28px;
+      --nav-h: 64px;
+      --radius: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════
+       NAV
+    ═══════════════════════════════════ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      padding: 0 48px;
+      background: rgba(238,241,238,0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    nav.scrolled {
+      border-color: var(--rule);
+      background: rgba(238,241,238,0.95);
+    }
+    .nav-inner {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .logo-text {
+      font-family: "Newsreader", Georgia, serif;
+      font-weight: 600;
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -0.015em;
+      position: relative;
+      top: 2px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-ghost {
+      height: 38px;
+      padding: 0 18px;
+      border: none;
+      background: transparent;
+      color: var(--graphite);
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-ghost:hover { background: rgba(30,37,40,0.07); color: var(--ink); }
+    .btn-primary {
+      height: 38px;
+      padding: 0 18px;
+      border: none;
+      background: var(--brand);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.08s;
+    }
+    .btn-primary:hover { background: var(--brand-dark); box-shadow: 0 2px 8px rgba(29,91,71,0.25); }
+    .btn-primary:active { transform: translateY(1px); }
+
+    /* ═══════════════════════════════════
+       HERO
+    ═══════════════════════════════════ */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(90deg,
+          rgba(var(--paper-rgb),0.95) 0%,
+          rgba(var(--paper-rgb),0.8) 30%,
+          rgba(var(--paper-rgb),0.35) 65%,
+          rgba(var(--paper-rgb),0) 100%),
+        radial-gradient(circle, rgba(30,37,40,0.7) 1.4px, transparent 1.9px);
+      background-size: 100% 100%, var(--spacing) var(--spacing);
+    }
+    #grid-canvas {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+    }
+    .hero-inner {
+      position: relative;
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 32px 80px;
+      padding: calc(var(--nav-h) + 8px) 64px 60px;
+    }
+
+    /* Left pitch */
+    .hero-left {
+      flex: 1 1 460px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--brand-light);
+      color: var(--brand);
+      border: 1px solid rgba(29,91,71,0.18);
+      border-radius: 100px;
+      padding: 5px 14px 5px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .eyebrow-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--brand);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.75); }
+    }
+    h1 {
+      font-family: "Newsreader", Georgia, serif;
+      font-size: clamp(38px, 4.5vw, 56px);
+      font-weight: 500;
+      line-height: 1.02;
+      letter-spacing: -0.028em;
+    }
+    .subline {
+      font-family: "Newsreader", Georgia, serif;
+      font-size: 21px;
+      line-height: 1.5;
+      color: var(--graphite);
+      max-width: 440px;
+    }
+    .demo-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 1px 3px rgba(30,37,40,0.06);
+    }
+    .demo-label { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase; }
+    .demo-question { font-family: "Newsreader", Georgia, serif; font-size: 20px; font-weight: 500; }
+    .demo-answer { font-family: "Newsreader", Georgia, serif; font-size: 17px; line-height: 1.65; }
+    .demo-answer sup { font-size: 11px; font-weight: 600; color: var(--brand); padding: 0 1px; }
+    .demo-citation { border-top: 1px solid var(--rule); padding-top: 11px; font-size: 13px; line-height: 1.6; color: var(--graphite); }
+    .cite-num { font-weight: 600; color: var(--brand); }
+    mark { background: var(--highlight); padding: 0 2px; color: var(--ink); border-radius: 2px; }
+
+    /* Right sign-in card */
+    .hero-right {
+      flex: 0 1 400px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 56px;
+    }
+    .signin-card {
+      width: 100%;
+      max-width: 390px;
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: 0 1px 2px rgba(30,37,40,0.06), 0 18px 40px rgba(30,37,40,0.10);
+    }
+    .signin-card form { display: flex; flex-direction: column; gap: 18px; }
+    h2 { font-family: "Newsreader", Georgia, serif; font-size: 30px; font-weight: 500; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 500; }
+    input[type="email"], input[type="password"] {
+      min-height: 42px;
+      border: 1px solid #B9C2BC;
+      border-radius: 6px;
+      background: var(--white);
+      padding: 0 13px;
+      font-size: 14.5px;
+      font-family: inherit;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:hover { border-color: #7D8C84; }
+    input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,91,71,0.15); }
+    input::placeholder { color: #9eada6; }
+    .btn-submit {
+      min-height: 42px;
+      border: none;
+      border-radius: 6px;
+      background: var(--brand);
+      color: white;
+      font-size: 14.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.08s;
+    }
+    .btn-submit:hover { background: var(--brand-dark); box-shadow: 0 2px 8px rgba(29,91,71,0.25); }
+    .btn-submit:active { transform: translateY(1px); }
+    .signup-prompt { font-size: 14px; color: var(--graphite); }
+    .signup-prompt a { color: var(--brand); text-underline-offset: 3px; }
+
+    /* Scroll indicator */
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      animation: fade-in 1s ease 1.2s both;
+    }
+    .scroll-chevron {
+      width: 20px; height: 20px;
+      border-right: 2px solid var(--rule-dark);
+      border-bottom: 2px solid var(--rule-dark);
+      transform: rotate(45deg);
+      animation: bounce-down 1.6s ease-in-out infinite;
+    }
+    @keyframes bounce-down {
+      0%, 100% { transform: rotate(45deg) translateY(0); opacity: 0.5; }
+      50% { transform: rotate(45deg) translateY(5px); opacity: 1; }
+    }
+    @keyframes fade-in { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    /* ═══════════════════════════════════
+       SHARED SECTION STYLES
+    ═══════════════════════════════════ */
+    section { padding: 100px 48px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: "Newsreader", Georgia, serif;
+      font-size: clamp(28px, 3.5vw, 42px);
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+    .section-sub {
+      font-size: 17px;
+      line-height: 1.65;
+      color: var(--graphite);
+      max-width: 520px;
+      margin-top: 14px;
+    }
+
+    /* ═══════════════════════════════════
+       FEATURES
+    ═══════════════════════════════════ */
+    #features { background: var(--white); }
+    .features-header { margin-bottom: 60px; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      cursor: default;
+    }
+    .feature-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(30,37,40,0.09);
+      border-color: var(--rule-dark);
+    }
+    .feature-icon {
+      width: 44px; height: 44px;
+      background: var(--brand-light);
+      border: 1px solid rgba(29,91,71,0.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .feature-icon svg { width: 20px; height: 20px; stroke: var(--brand); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feature-title { font-size: 16px; font-weight: 600; }
+    .feature-desc { font-size: 14.5px; line-height: 1.65; color: var(--graphite); }
+
+    /* ═══════════════════════════════════
+       HOW IT WORKS
+    ═══════════════════════════════════ */
+    #how { background: var(--paper); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0;
+      margin-top: 60px;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: calc(16.6% + 24px);
+      right: calc(16.6% + 24px);
+      height: 1px;
+      background: linear-gradient(90deg, var(--rule-dark), var(--rule-dark));
+      z-index: 0;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 2px solid var(--rule-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Newsreader", Georgia, serif;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--brand);
+      margin-bottom: 24px;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .step:hover .step-num {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: white;
+    }
+    .step-title { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+    .step-desc { font-size: 14.5px; line-height: 1.65; color: var(--graphite); }
+
+    /* ═══════════════════════════════════
+       TESTIMONIALS
+    ═══════════════════════════════════ */
+    #testimonials { background: var(--white); }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 56px;
+    }
+    .testimonial {
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 28px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: box-shadow 0.2s;
+    }
+    .testimonial:hover { box-shadow: 0 6px 24px rgba(30,37,40,0.08); }
+    .testimonial-quote {
+      font-family: "Newsreader", Georgia, serif;
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+    .testimonial-quote::before { content: '\201C'; color: var(--brand); font-size: 28px; line-height: 0; vertical-align: -6px; margin-right: 2px; }
+    .testimonial-author { display: flex; align-items: center; gap: 12px; }
+    .author-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--brand-light);
+      border: 1.5px solid rgba(29,91,71,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Newsreader", serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--brand);
+      flex-shrink: 0;
+    }
+    .author-name { font-size: 13.5px; font-weight: 600; }
+    .author-role { font-size: 12.5px; color: var(--muted); }
+    .stars { display: flex; gap: 2px; margin-bottom: -6px; }
+    .star { color: #F5A623; font-size: 14px; }
+
+    /* ═══════════════════════════════════
+       FAQ
+    ═══════════════════════════════════ */
+    #faq { background: var(--paper); }
+    .faq-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px 80px;
+      margin-top: 56px;
+      align-items: start;
+    }
+    .faq-left .section-sub { max-width: 340px; }
+    .faq-list { display: flex; flex-direction: column; gap: 0; }
+    .faq-item {
+      border-bottom: 1px solid var(--rule);
+    }
+    .faq-item:first-child { border-top: 1px solid var(--rule); }
+    .faq-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 18px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .faq-btn:hover { color: var(--brand); }
+    .faq-icon {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--rule);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, transform 0.25s;
+    }
+    .faq-icon svg { width: 10px; height: 10px; stroke: var(--graphite); stroke-width: 2.5; stroke-linecap: round; transition: stroke 0.15s; }
+    .faq-item.open .faq-icon { background: var(--brand-light); transform: rotate(45deg); }
+    .faq-item.open .faq-icon svg { stroke: var(--brand); }
+    .faq-answer {
+      font-size: 14.5px;
+      line-height: 1.7;
+      color: var(--graphite);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding-bottom 0.3s;
+      padding-bottom: 0;
+    }
+    .faq-item.open .faq-answer { max-height: 300px; padding-bottom: 18px; }
+
+    /* ═══════════════════════════════════
+       CTA
+    ═══════════════════════════════════ */
+    #cta {
+      background: var(--brand);
+      padding: 100px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1.4px, transparent 1.9px);
+      background-size: var(--spacing) var(--spacing);
+      pointer-events: none;
+    }
+    .cta-inner { position: relative; max-width: 620px; margin: 0 auto; }
+    .cta-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+    .cta-title {
+      font-family: "Newsreader", Georgia, serif;
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 500;
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: white;
+      margin-bottom: 20px;
+    }
+    .cta-sub { font-size: 17px; line-height: 1.6; color: rgba(255,255,255,0.72); margin-bottom: 36px; }
+    .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-cta-primary {
+      height: 48px;
+      padding: 0 28px;
+      background: white;
+      color: var(--brand-dark);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-cta-primary:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.2); transform: translateY(-1px); }
+    .btn-cta-secondary {
+      height: 48px;
+      padding: 0 28px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-cta-secondary:hover { background: rgba(255,255,255,0.2); }
+    .cta-note { margin-top: 18px; font-size: 13px; color: rgba(255,255,255,0.5); }
+
+    /* ═══════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════ */
+    footer {
+      background: var(--ink);
+      padding: 60px 48px 40px;
+      color: rgba(255,255,255,0.65);
+    }
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+    .footer-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: space-between;
+      padding-bottom: 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 32px;
+    }
+    .footer-brand { max-width: 280px; }
+    .footer-logo { display: flex; align-items: center; gap: 10px; color: white; text-decoration: none; margin-bottom: 14px; }
+    .footer-logo-text { font-family: "Newsreader", serif; font-weight: 600; font-size: 22px; letter-spacing: -0.015em; position: relative; top: 2px; }
+    .footer-tagline { font-size: 14px; line-height: 1.65; }
+    .footer-links-group { display: flex; gap: 56px; flex-wrap: wrap; }
+    .footer-col h4 { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 16px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+    .footer-col a:hover { color: white; }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+    .footer-bottom a { color: rgba(255,255,255,0.4); text-decoration: none; }
+    .footer-bottom a:hover { color: rgba(255,255,255,0.7); }
+
+    /* ═══════════════════════════════════
+       SCROLL ANIMATIONS
+    ═══════════════════════════════════ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ═══════════════════════════════════
+       MODAL
+    ═══════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(30,37,40,0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 2px 4px rgba(30,37,40,0.08), 0 24px 56px rgba(30,37,40,0.18);
+      transform: translateY(16px) scale(0.98);
+      transition: transform 0.25s ease;
+      position: relative;
+    }
+    .modal-overlay.open .modal {
+      transform: translateY(0) scale(1);
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px; right: 14px;
+      width: 30px; height: 30px;
+      border: none;
+      background: var(--paper);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--graphite);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1;
+    }
+    .modal-close:hover { background: var(--rule); color: var(--ink); }
+    .modal form { display: flex; flex-direction: column; gap: 18px; }
+    .modal .modal-title { font-family: "Newsreader", Georgia, serif; font-size: 28px; font-weight: 500; }
+    .modal .modal-sub { font-size: 14px; color: var(--graphite); margin-top: -8px; }
+    .modal input[type="text"] {
+      min-height: 42px;
+      border: 1px solid #B9C2BC;
+      border-radius: 6px;
+      background: var(--white);
+      padding: 0 13px;
+      font-size: 14.5px;
+      font-family: inherit;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .modal input[type="text"]:hover { border-color: #7D8C84; }
+    .modal input[type="text"]:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,91,71,0.15); }
+    .modal-divider { text-align: center; font-size: 13px; color: var(--muted); position: relative; }
+    .modal-divider::before, .modal-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%; width: calc(50% - 24px);
+      height: 1px; background: var(--rule);
+    }
+    .modal-divider::before { left: 0; }
+    .modal-divider::after { right: 0; }
+    .signin-switch { font-size: 14px; color: var(--graphite); text-align: center; }
+    .signin-switch a { color: var(--brand); text-underline-offset: 3px; cursor: pointer; }
+
+    /* ═══════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════ */
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      section { padding: 72px 24px; }
+      .hero-inner { padding: calc(var(--nav-h) + 24px) 24px 60px; align-items: flex-start; }
+      .faq-cols { grid-template-columns: 1fr; gap: 40px; }
+      .steps::before { display: none; }
+      footer { padding: 48px 24px 32px; }
+      #cta { padding: 72px 24px; }
+    }
+    @media (max-width: 720px) {
+      .nav-links .btn-ghost { display: none; }
+      .logo-text { font-size: 22px; }
+      .logo svg { width: 28px; height: 28px; }
+      .btn-primary { white-space: nowrap; }
+    }
+    @media (max-width: 600px) {
+      .hero-right { flex-basis: 100%; }
+      .footer-links-group { gap: 32px; }
+    }
+    /* ═══════════════════════════════════
+       APP  (Documents · Ask · History · Admin)
+    ═══════════════════════════════════ */
+    #app {
+      --a-bg: #F5F7F5; --a-surface: #FFFFFF; --a-ink: #1E2528; --a-sub: #566064; --a-muted: #7A868A;
+      --a-rule: #D6DCD7; --a-chip: #EEF1EE; --a-accent: #1D5B47; --a-accent-soft: #EBF4F0;
+      --a-mark: #F5E27C; --a-mark-ink: #1E2528; --a-warn-bg: #FBF3D9; --a-warn-ink: #5C3D00; --a-bad: #9B2C22;
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: var(--a-bg); color: var(--a-ink); font-size: 15px;
+    }
+    #app.dark {
+      --a-bg: #111715; --a-surface: #19211E; --a-ink: #E6ECE9; --a-sub: #A7B3AE; --a-muted: #8A9893;
+      --a-rule: #2B3632; --a-chip: #202A26; --a-accent: #6CC3A0; --a-accent-soft: #1F3A30;
+      --a-mark: #6E5F1A; --a-mark-ink: #FFF6CC; --a-warn-bg: #3A3016; --a-warn-ink: #F3DFA0; --a-bad: #F0A39A;
+    }
+    #app.visible { display: flex; }
+    #app [hidden] { display: none !important; }
+    #app .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    #app :focus-visible { outline: 2px solid var(--a-accent); outline-offset: 2px; }
+
+    /* Landing-page element styles (nav, label, h1, section) must not leak into the app */
+    #app nav.app-nav { position: static; height: auto; padding: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; z-index: auto; transition: none; }
+    #app label { display: inline; font-size: inherit; font-weight: inherit; gap: 0; }
+    #app section.page { padding: 36px 40px 64px; }
+    .app-sidebar { width: 248px; flex: none; background: var(--ink); color: #fff; display: flex; flex-direction: column; height: 100vh; padding: 18px 12px; gap: 18px; }
+    .sidebar-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; color: #fff; padding: 4px 8px; }
+    .sidebar-logo-text { font-family: "Newsreader", serif; font-size: 21px; font-weight: 600; letter-spacing: -0.015em; position: relative; top: 2px; }
+    .app-nav { display: flex; flex-direction: column; gap: 2px; }
+    .app-nav button { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 42px; padding: 0 12px; border: none; border-radius: 8px; background: transparent; color: rgba(255,255,255,0.72); font: 500 14.5px "IBM Plex Sans", sans-serif; cursor: pointer; text-align: left; transition: background .15s, color .15s; }
+    .app-nav button svg { width: 17px; height: 17px; flex: none; }
+    .app-nav button:hover { background: rgba(255,255,255,0.07); color: #fff; }
+    .app-nav button[aria-current="page"] { background: rgba(255,255,255,0.12); color: #fff; box-shadow: inset 3px 0 0 #6CC3A0; }
+    .nav-label { padding: 12px 12px 4px; font-size: 12px; color: rgba(255,255,255,0.4); }
+    .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+    .user-row { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); display: flex; align-items: center; justify-content: center; font: 600 13px "IBM Plex Sans", sans-serif; color: #fff; flex: none; }
+    .user-name { font-size: 13.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 12px; color: rgba(255,255,255,0.5); }
+    .side-btn { min-height: 38px; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; background: transparent; color: rgba(255,255,255,0.85); font: 500 13.5px "IBM Plex Sans", sans-serif; cursor: pointer; transition: background .15s; }
+    .side-btn:hover { background: rgba(255,255,255,0.08); }
+
+    .app-main { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+    .page { max-width: 1040px; margin: 0 auto; padding: 36px 40px 64px; display: flex; flex-direction: column; gap: 22px; }
+    .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; }
+    .page-head h1 { font-family: "Newsreader", Georgia, serif; font-size: 32px; font-weight: 500; letter-spacing: -0.01em; }
+    .page-head p { margin-top: 4px; color: var(--a-sub); font-size: 15px; }
+    .a-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border: 1px solid transparent; border-radius: 9px; background: var(--brand); color: #fff; font: 600 14.5px "IBM Plex Sans", sans-serif; cursor: pointer; white-space: nowrap; transition: background .15s, box-shadow .15s; }
+    .a-btn:hover { background: var(--brand-dark); box-shadow: 0 2px 8px rgba(29,91,71,.25); }
+    .a-btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+    .a-btn.ghost { background: var(--a-surface); color: var(--a-ink); border-color: var(--a-rule); }
+    .a-btn.ghost:hover { border-color: var(--a-accent); color: var(--a-accent); box-shadow: none; }
+    .a-btn.sm { min-height: 34px; padding: 0 12px; font-size: 13.5px; }
+    .a-card { background: var(--a-surface); border: 1px solid var(--a-rule); border-radius: 12px; }
+
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .stat { padding: 18px 20px; }
+    .stat span { font-size: 13.5px; color: var(--a-sub); }
+    .stat b { display: block; margin-top: 4px; font-family: "Newsreader", serif; font-size: 34px; font-weight: 500; line-height: 1.1; }
+    .stat small { font-size: 13px; color: var(--a-muted); }
+
+    .drop { border: 1.5px dashed var(--a-rule); border-radius: 12px; background: var(--a-surface); padding: 30px 24px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+    .drop:hover, .drop.over { border-color: var(--a-accent); background: var(--a-accent-soft); }
+    .drop b { display: block; font-size: 16px; }
+    .drop span { display: block; margin-top: 6px; font-size: 13.5px; color: var(--a-sub); }
+    .notice { padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+    .notice.err { background: #FBEDEB; color: #8A2E25; }
+    .notice.ok { background: var(--a-accent-soft); color: var(--a-accent); }
+    details.paste { padding: 14px 18px; }
+    details.paste summary { cursor: pointer; font-weight: 600; font-size: 14.5px; }
+    .paste-form { margin-top: 14px; display: grid; gap: 10px; }
+    .a-input, .a-textarea { width: 100%; border: 1px solid var(--a-rule); border-radius: 8px; background: var(--a-surface); color: var(--a-ink); font: 400 15px "IBM Plex Sans", sans-serif; padding: 10px 12px; }
+    .a-textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
+    .a-input:focus, .a-textarea:focus { outline: none; border-color: var(--a-accent); box-shadow: 0 0 0 3px rgba(29,91,71,.15); }
+
+    .tbl-wrap { overflow-x: auto; }
+    table.a-tbl { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14.5px; }
+    .a-tbl th { text-align: left; font-size: 13px; font-weight: 600; color: var(--a-sub); padding: 12px 14px; border-bottom: 1px solid var(--a-rule); }
+    .a-tbl td { padding: 12px 14px; border-bottom: 1px solid var(--a-rule); vertical-align: middle; }
+    .a-tbl tr:last-child td { border-bottom: none; }
+    .a-tbl tbody tr:hover td { background: var(--a-chip); }
+    .status { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .status.ok { color: var(--a-accent); }
+    .status.busy { color: #B7791F; }
+    .status.bad { color: var(--a-bad); }
+
+    /* Ask */
+    /* Question composer */
+    .composer { padding: 22px 24px 16px; display: flex; flex-direction: column; gap: 14px; transition: border-color .15s, box-shadow .15s; }
+    .composer:focus-within { border-color: var(--a-accent); box-shadow: 0 0 0 4px rgba(29,91,71,.12); }
+    .composer textarea { width: 100%; min-height: 64px; max-height: 220px; resize: none; border: none; background: transparent; color: var(--a-ink); font-family: "Newsreader", Georgia, serif; font-size: 24px; line-height: 1.4; padding: 0; overflow-y: auto; }
+    .composer textarea::placeholder { color: var(--a-muted); }
+    #app .composer textarea:focus, #app .composer textarea:focus-visible { outline: none; }
+    .composer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--a-rule); }
+    .composer-bar .scope { flex: 1 1 auto; }
+    .composer-hint { font-size: 13px; color: var(--a-muted); }
+    .composer-hint kbd { font: 600 12px "IBM Plex Sans", sans-serif; padding: 1px 6px; border: 1px solid var(--a-rule); border-bottom-width: 2px; border-radius: 4px; background: var(--a-chip); color: var(--a-sub); }
+    .ask-btn { min-height: 44px; padding: 0 22px; }
+    .ask-btn svg { width: 16px; height: 16px; }
+    .try { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .try > span { font-size: 13.5px; color: var(--a-sub); margin-right: 2px; }
+    .caret { display: inline-block; width: 8px; height: 20px; margin-left: 3px; background: var(--a-accent); vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .feedback .push { margin-left: auto; }
+    .tools-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .tools-row .a-input { flex: 1 1 260px; }
+    .badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--a-accent-soft); color: var(--a-accent); font-size: 12px; font-weight: 600; }
+    .a-select { min-height: 34px; border: 1px solid var(--a-rule); border-radius: 8px; background: var(--a-surface); color: var(--a-ink); font: 400 14px "IBM Plex Sans", sans-serif; padding: 0 8px; }
+    .invite { padding: 18px 20px; display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1.4fr) auto auto; gap: 10px; align-items: start; }
+    .invite .err { grid-column: 1 / -1; font-size: 13px; color: var(--a-bad); }
+    .muted-cell { color: var(--a-sub); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { border: 1px solid var(--a-rule); background: var(--a-surface); color: var(--a-ink); border-radius: 999px; padding: 7px 14px; font: 500 13.5px "IBM Plex Sans", sans-serif; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+    .chip:hover { border-color: var(--a-accent); color: var(--a-accent); background: var(--a-accent-soft); }
+    .scope { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--a-sub); flex-wrap: wrap; }
+    .scope select { min-height: 36px; border: 1px solid var(--a-rule); border-radius: 8px; background: var(--a-surface); color: var(--a-ink); font: 400 14px "IBM Plex Sans", sans-serif; padding: 0 10px; }
+    .empty { padding: 40px 24px; text-align: center; color: var(--a-sub); }
+    .empty b { display: block; color: var(--a-ink); font-family: "Newsreader", serif; font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+    .pipeline { padding: 20px 22px; display: grid; gap: 10px; }
+    .pstep { display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: var(--a-muted); }
+    .pstep i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--a-rule); flex: none; }
+    .pstep.active { color: var(--a-ink); }
+    .pstep.active i { border-color: var(--a-accent); border-top-color: transparent; animation: spin .8s linear infinite; }
+    .pstep.done { color: var(--a-sub); }
+    .pstep.done i { border-color: var(--a-accent); background: var(--a-accent); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .answer { padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; }
+    .answer-label { font-size: 13px; color: var(--a-muted); font-weight: 500; }
+    .answer-text { font-family: "Newsreader", Georgia, serif; font-size: 19px; line-height: 1.7; }
+    .cnum { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; margin: 0 2px; border-radius: 5px; background: var(--a-accent); color: var(--a-surface); font: 700 12px "IBM Plex Sans", sans-serif; vertical-align: 2px; text-decoration: none; }
+    .feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--a-rule); font-size: 14px; color: var(--a-sub); }
+    .feedback .a-btn[aria-pressed="true"] { border-color: var(--a-accent); color: var(--a-accent); background: var(--a-accent-soft); }
+    .not-found { padding: 18px 20px; border-radius: 10px; background: var(--a-warn-bg); color: var(--a-warn-ink); }
+    .not-found b { display: block; font-family: "Newsreader", serif; font-size: 21px; font-weight: 500; margin-bottom: 6px; }
+    .sources { display: grid; gap: 12px; }
+    .source { padding: 16px 18px; display: grid; gap: 8px; }
+    .source-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; }
+    .source-name { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14.5px; min-width: 0; word-break: break-word; }
+    .rel { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--a-sub); white-space: nowrap; }
+    .rel i { display: block; width: 70px; height: 5px; border-radius: 3px; background: var(--a-rule); overflow: hidden; }
+    .rel i u { display: block; height: 100%; background: var(--a-accent); }
+    .source p { font-family: "Newsreader", Georgia, serif; font-size: 16px; line-height: 1.65; }
+    .source mark { background: var(--a-mark); color: var(--a-mark-ink); padding: 0 2px; border-radius: 2px; }
+    .source small { font-size: 12.5px; color: var(--a-muted); }
+    .source.dim .cnum { background: var(--a-muted); }
+
+    /* Sources disagree */
+    .conflict { border: 1px solid #E3B341; background: var(--a-warn-bg); color: var(--a-warn-ink); border-radius: 10px; padding: 16px 18px; display: grid; gap: 12px; }
+    .conflict-head { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+    .conflict-head svg { width: 18px; height: 18px; flex: none; }
+    .conflict p { font-size: 14px; line-height: 1.55; }
+    .conflict-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .conflict-item { background: var(--a-surface); color: var(--a-ink); border: 1px solid var(--a-rule); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; }
+    .conflict-item b { font-size: 13.5px; display: flex; align-items: center; gap: 6px; word-break: break-word; }
+    .conflict-item q { font-family: "Newsreader", Georgia, serif; font-size: 16px; line-height: 1.55; quotes: "“" "”"; }
+    .conflict-item em { font-style: normal; background: var(--a-mark); color: var(--a-mark-ink); padding: 0 3px; border-radius: 3px; font-weight: 600; }
+    /* How I searched */
+    details.how { border-top: 1px solid var(--a-rule); padding-top: 12px; font-size: 14px; color: var(--a-sub); }
+    details.how summary { cursor: pointer; font-weight: 600; color: var(--a-ink); width: fit-content; }
+    details.how ul { margin: 10px 0 0 18px; display: grid; gap: 6px; line-height: 1.55; }
+    .term { display: inline-block; padding: 1px 8px; margin: 1px 2px; border-radius: 999px; background: var(--a-chip); border: 1px solid var(--a-rule); color: var(--a-ink); font-size: 13px; }
+    .term s { text-decoration: none; color: var(--a-muted); }
+    /* Coverage gaps */
+    .gap-list { list-style: none; }
+    .gap-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 16px 20px; border-bottom: 1px solid var(--a-rule); align-items: center; }
+    .gap-list li:last-child { border-bottom: none; }
+    .gap-q { font-weight: 600; }
+    .gap-meta { font-size: 13.5px; color: var(--a-sub); }
+    .gap-meta em { font-style: normal; font-weight: 600; background: var(--a-mark); color: var(--a-mark-ink); padding: 0 3px; border-radius: 3px; }
+    .gap-count { grid-row: span 2; font-family: "Newsreader", serif; font-size: 26px; text-align: right; }
+    .gap-count small { display: block; font-family: "IBM Plex Sans", sans-serif; font-size: 12px; color: var(--a-muted); }
+    .sec-title { font-family: "Newsreader", serif; font-size: 22px; font-weight: 500; margin-top: 8px; }
+    .sec-sub { font-size: 14px; color: var(--a-sub); margin-top: -12px; }
+
+    /* History */
+    .hist { display: grid; }
+    .hist button { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; width: 100%; padding: 16px 20px; border: none; border-bottom: 1px solid var(--a-rule); background: transparent; color: var(--a-ink); text-align: left; cursor: pointer; font: inherit; }
+    .hist li:last-child button { border-bottom: none; }
+    .hist button:hover { background: var(--a-chip); }
+    .hist b { font-weight: 600; }
+    .hist span { font-size: 13.5px; color: var(--a-sub); }
+    .hist .nf { color: #B7791F; font-weight: 500; }
+    .hist .ok { color: var(--a-accent); font-weight: 500; }
+
+    /* Admin */
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .metric { padding: 18px 20px; }
+    .metric span { font-size: 13.5px; color: var(--a-sub); }
+    .metric b { display: block; margin-top: 4px; font-family: "Newsreader", serif; font-size: 32px; font-weight: 500; }
+    .metric small { font-size: 13px; color: var(--a-muted); }
+    .metric small.met { color: var(--a-accent); }
+    .metric small.miss { color: var(--a-bad); }
+    .pass { color: var(--a-accent); font-weight: 600; }
+    .fail { color: var(--a-bad); font-weight: 600; }
+
+    @media (max-width: 860px) {
+      #app section.page { padding: 24px 16px 48px; }
+      #app { flex-direction: column; }
+      .app-sidebar { width: auto; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 12px; gap: 8px; }
+      .app-nav { flex-direction: row; flex-wrap: wrap; order: 3; width: 100%; }
+      .app-nav button { width: auto; }
+      .nav-label { display: none; }
+      .sidebar-bottom { margin: 0 0 0 auto; flex-direction: row; }
+      .user-row { display: none; }
+      .app-main { height: auto; flex: 1; }
+      .page { padding: 24px 16px 48px; }
+      .stats, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .invite { grid-template-columns: minmax(0, 1fr); }
+      .conflict-grid { grid-template-columns: minmax(0, 1fr); }
+      .composer textarea { font-size: 20px; }
+      .composer-hint { display: none; }
+      .composer-bar .ask-btn { margin-left: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) { .pstep.active i, .caret { animation: none; } }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ NAV ═══ -->
+  <nav id="nav">
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1D5B47" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10.6" stroke-width="1.5"/>
+          <circle cx="13.7" cy="10.2" r="3.5" stroke-width="1.5"/>
+          <path d="M10.95 12.95 L11.8 12.1" stroke-width="0.8"/>
+          <path d="M10.5 13.4 L7.9 16" stroke-width="1.9"/>
+        </svg>
+        <span class="logo-text">SearchLab.AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="btn-ghost">Features</a>
+        <a href="#how" class="btn-ghost">How it works</a>
+        <a href="#faq" class="btn-ghost">FAQ</a>
+        <a href="#cta" class="btn-primary">Get started free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero" id="hero">
+    <canvas id="grid-canvas" aria-hidden="true"></canvas>
+    <div class="hero-inner">
+
+      <!-- Left -->
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="eyebrow-dot"></span>
+          Free to use · PDF, DOCX and TXT
+        </div>
+        <div>
+          <h1>
+            <span style="display:block">Get answers from</span>
+            <span style="display:block">your own documents.</span>
+          </h1>
+          <p class="subline" style="margin-top:18px">Every answer comes with the page it came from, so you can check it yourself.</p>
+        </div>
+        <figure class="demo-card">
+          <p class="demo-label">You asked</p>
+          <p class="demo-question">How much paid leave do interns get?</p>
+          <p class="demo-answer">Interns get 1.5 days of paid leave for every month of their internship.<sup>1</sup></p>
+          <figcaption class="demo-citation">
+            <span class="cite-num">1</span> Intern_Handbook_2026.pdf, page 12: "Interns are entitled to <mark>1.5 days of paid leave per month</mark> of internship."
+          </figcaption>
+        </figure>
+      </div>
+
+      <!-- Right -->
+      <div class="hero-right">
+        <div class="signin-card">
+          <form id="signin-form" onsubmit="return false">
+            <h2>Sign in</h2>
+            <label>
+              Email
+              <input type="email" placeholder="you@example.com" autocomplete="email" />
+            </label>
+            <label>
+              Password
+              <input type="password" placeholder="Your password" autocomplete="current-password" />
+            </label>
+            <button type="submit" class="btn-submit">Sign in</button>
+            <p class="signup-prompt">No account yet? <a href="#" id="open-signup">Create one</a></p>
+            <p class="signup-prompt" style="font-size:13px;margin-top:-6px">Demo: any email and password work. Use an email with “admin” in it (e.g. admin@demo.com) to see the admin pages.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-hint" aria-hidden="true">
+      <span>Scroll</span>
+      <div class="scroll-chevron"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SIGN-UP MODAL ═══ -->
+  <div class="modal-overlay" id="signup-modal" role="dialog" aria-modal="true" aria-label="Create account">
+    <div class="modal">
+      <button class="modal-close" id="close-signup" aria-label="Close">&#x2715;</button>
+      <form onsubmit="return false">
+        <p class="modal-title">Create account</p>
+        <p class="modal-sub">Free to use. Your documents stay private to your account.</p>
+        <label>
+          Full name
+          <input type="text" placeholder="Jane Smith" autocomplete="name" />
+        </label>
+        <label>
+          Email
+          <input type="email" placeholder="you@example.com" autocomplete="email" />
+        </label>
+        <label>
+          Password
+          <input type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+        </label>
+        <button type="submit" class="btn-submit">Create account</button>
+        <p class="signin-switch">Already have an account? <a id="switch-to-signin">Sign in</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ FEATURES ═══ -->
+  <section id="features">
+    <div class="section-inner">
+      <div class="features-header reveal">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Everything you need to trust your answers</h2>
+        <p class="section-sub">SearchLab.AI doesn't just find information — it shows you exactly where it came from, every time.</p>
+      </div>
+      <div class="features-grid">
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <div class="feature-title">Any document format</div>
+          <div class="feature-desc">Upload PDFs, Word documents (DOCX) and text files, up to 10 MB each. SearchLab.AI reads them without any reformatting.</div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div class="feature-title">Plain-English questions</div>
+          <div class="feature-desc">No query syntax to learn. Ask naturally — "What's the refund policy?" or "Who approved the Q3 budget?" — and get a direct answer.</div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div class="feature-title">Cited, verifiable answers</div>
+          <div class="feature-desc">Every response includes the exact document name, page number, and highlighted passage — so you never have to take it on faith.</div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div class="feature-title">Search across your library</div>
+          <div class="feature-desc">Upload your whole document library and query across all of them at once, or pick specific documents to search in.</div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="feature-title">Private by default</div>
+          <div class="feature-desc">Your documents stay yours. Only you can see the files you upload and the questions you ask, and everything is sent over HTTPS.</div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="feature-title">Ready to search quickly</div>
+          <div class="feature-desc">Most documents are ready to search within a minute of uploading, and you can follow their progress as they process.</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HOW IT WORKS ═══ -->
+  <section id="how">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="section-label">How it works</p>
+        <h2 class="section-title">From upload to answer in three steps</h2>
+        <p class="section-sub">No setup, no configuration. SearchLab.AI is ready the moment you drop in your first document.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-num">1</div>
+          <div class="step-title">Upload your documents</div>
+          <div class="step-desc">Drag and drop a PDF, Word (DOCX) or text file into your workspace. SearchLab.AI processes it in about a minute.</div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">2</div>
+          <div class="step-title">Ask anything</div>
+          <div class="step-desc">Type your question in plain English — just like you'd ask a colleague who's read every document.</div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">3</div>
+          <div class="step-title">Verify the source</div>
+          <div class="step-desc">Every answer links to the exact page and passage it came from. Click through and read it yourself.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TESTIMONIALS ═══ -->
+  <section id="testimonials">
+    <div class="section-inner">
+      <div class="reveal">
+        <p class="section-label">Testimonials</p>
+        <h2 class="section-title">Trusted by teams who rely on accuracy</h2>
+      </div>
+      <div class="testimonials-grid">
+
+        <div class="testimonial reveal">
+          <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+          <p class="testimonial-quote">SearchLab.AI cut our contract review time in half. The citations mean we can trust every answer without digging through the full document ourselves.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">PR</div>
+            <div>
+              <div class="author-name">Priya Ramachandran</div>
+              <div class="author-role">Legal Counsel, Meridian Group</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial reveal">
+          <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+          <p class="testimonial-quote">We uploaded our entire HR policy library. Now any employee can get a direct, cited answer instead of emailing HR every time.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">JL</div>
+            <div>
+              <div class="author-name">James Lim</div>
+              <div class="author-role">Head of People, Stackfield</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial reveal">
+          <div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+          <p class="testimonial-quote">As a researcher I deal with hundreds of papers. Being able to query across all of them and get cited answers is genuinely magical.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">AK</div>
+            <div>
+              <div class="author-name">Ayesha Khan</div>
+              <div class="author-role">Research Lead, Orion Labs</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FAQ ═══ -->
+  <section id="faq">
+    <div class="section-inner">
+      <div class="faq-cols">
+        <div class="faq-left reveal">
+          <p class="section-label">FAQ</p>
+          <h2 class="section-title">Questions? We have answers.</h2>
+          <p class="section-sub">Still curious? Sign in and try it with one of your own documents.</p>
+        </div>
+        <div class="faq-list reveal">
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              What file types does SearchLab.AI support?
+              <div class="faq-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </button>
+            <div class="faq-answer">SearchLab.AI supports PDF, DOCX and TXT files, up to 10 MB each. Scanned PDFs (images of text) aren’t supported yet, since they contain no readable text.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Is my data private?
+              <div class="faq-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </button>
+            <div class="faq-answer">Yes. Your documents and questions are visible only to your account. To write an answer, only the passages relevant to your question are sent to the language model provider.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              How accurate are the answers?
+              <div class="faq-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </button>
+            <div class="faq-answer">SearchLab.AI only answers from your documents and always cites its source. If the information isn't in your documents, it will say so — it won't make something up.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Can I share documents with my team?
+              <div class="faq-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </button>
+            <div class="faq-answer">Not yet. Each account has its own private document library. Shared team workspaces are planned for a future version.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Is SearchLab.AI free?
+              <div class="faq-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            </button>
+            <div class="faq-answer">Yes. SearchLab.AI is free to use.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section id="cta" style="padding:100px 48px; text-align:center; position:relative; overflow:hidden; background:var(--brand);">
+    <canvas id="cta-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+    <div class="cta-inner">
+      <p class="cta-label">Get started today</p>
+      <h2 class="cta-title">Stop searching. Start knowing.</h2>
+      <p class="cta-sub">Get cited, verifiable answers from your own documents in seconds.</p>
+      <div class="cta-actions">
+        <a href="#signin-form" class="btn-cta-primary">Create a free account</a>
+        <a href="#how" class="btn-cta-secondary">See how it works</a>
+      </div>
+      <p class="cta-note">Free to use · PDF, DOCX and TXT up to 10 MB</p>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="footer-logo">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10.6" stroke-width="1.5"/>
+              <circle cx="13.7" cy="10.2" r="3.5" stroke-width="1.5"/>
+              <path d="M10.95 12.95 L11.8 12.1" stroke-width="0.8"/>
+              <path d="M10.5 13.4 L7.9 16" stroke-width="1.9"/>
+            </svg>
+            <span class="footer-logo-text">SearchLab.AI</span>
+          </a>
+          <p class="footer-tagline">Get answers from your own documents — with the page they came from, every time.</p>
+        </div>
+        <div class="footer-links-group">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <ul>
+              <li><a href="#">Features</a></li>
+              <li><a href="#">Changelog</a></li>
+              <li><a href="#">Roadmap</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <ul>
+              <li><a href="#">About</a></li>
+              <li><a href="#">Blog</a></li>
+              <li><a href="#">Careers</a></li>
+              <li><a href="#">Contact</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <ul>
+              <li><a href="#">Privacy</a></li>
+              <li><a href="#">Terms</a></li>
+              <li><a href="#">Security</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 SearchLab.AI. All rights reserved.</span>
+        <span style="display:flex;gap:20px">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+
+
+  <!-- ═══ INNER APP ═══ -->
+  <div id="app">
+    <aside class="app-sidebar">
+      <a href="#" class="sidebar-logo" id="app-logo-back" aria-label="SearchLab.AI, back to the home page">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10.6" stroke-width="1.5"/><circle cx="13.7" cy="10.2" r="3.5" stroke-width="1.5"/><path d="M10.95 12.95 L11.8 12.1" stroke-width="0.8"/><path d="M10.5 13.4 L7.9 16" stroke-width="1.9"/></svg>
+        <span class="sidebar-logo-text">SearchLab.AI</span>
+      </a>
+      <nav class="app-nav" aria-label="App">
+        <button type="button" data-page="documents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>Documents</button>
+        <button type="button" data-page="ask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Ask</button>
+        <button type="button" data-page="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg>History</button>
+        <div class="nav-label admin-only">Admin</div>
+        <button type="button" data-page="admin" class="admin-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Evaluation</button>
+        <button type="button" data-page="gaps" class="admin-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6"/><path d="M12 16.5v.5"/></svg>Coverage gaps</button>
+        <button type="button" data-page="users" class="admin-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="M17 4a4 4 0 0 1 0 8"/><path d="M22 21c0-3-1.5-5-4-5.7"/></svg>Users</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <div class="user-avatar" id="user-avatar">U</div>
+          <div style="min-width:0">
+            <div class="user-name" id="user-display-name">User</div>
+            <div class="user-role" id="user-display-role">User</div>
+          </div>
+        </div>
+        <button type="button" class="side-btn" id="theme-btn" aria-pressed="false">Dark theme</button>
+        <button type="button" class="side-btn" id="signout-btn">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="app-main" id="app-main">
+      <!-- Documents -->
+      <section class="page" id="page-documents" aria-labelledby="h-docs">
+        <div class="page-head">
+          <div><h1 id="h-docs">My documents</h1><p>Upload files, then ask questions about them.</p></div>
+          <button type="button" class="a-btn" id="upload-btn">Upload document</button>
+        </div>
+        <div class="stats">
+          <div class="a-card stat"><span>Documents</span><b id="st-docs">0</b><small>in your library</small></div>
+          <div class="a-card stat"><span>Passages indexed</span><b id="st-chunks">0</b><small>searchable chunks</small></div>
+          <div class="a-card stat"><span>Questions asked</span><b id="st-qs">0</b><small>so far</small></div>
+        </div>
+        <div class="drop" id="drop" role="button" tabindex="0" aria-describedby="drop-help">
+          <b>Drag and drop a file here, or click to browse</b>
+          <span id="drop-help">PDF, DOCX or TXT, up to 10 MB. Text-based files only; scanned documents aren’t supported.</span>
+        </div>
+        <input type="file" id="file-input" accept=".pdf,.docx,.txt" multiple class="sr" tabindex="-1" aria-hidden="true" />
+        <p class="notice" id="doc-notice" role="status" hidden></p>
+        <details class="a-card paste">
+          <summary>Or paste text as a document</summary>
+          <div class="paste-form">
+            <label class="sr" for="paste-name">Document name</label>
+            <input class="a-input" id="paste-name" placeholder="Document name, e.g. Meeting notes" />
+            <label class="sr" for="paste-text">Document text</label>
+            <textarea class="a-textarea" id="paste-text" placeholder="Paste the text here"></textarea>
+            <div><button type="button" class="a-btn" id="paste-add">Add document</button></div>
+          </div>
+        </details>
+        <div class="a-card tbl-wrap">
+          <table class="a-tbl">
+            <caption class="sr">Your documents</caption>
+            <thead><tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Added</th><th scope="col">Passages</th><th scope="col">Status</th><th scope="col"><span class="sr">Actions</span></th></tr></thead>
+            <tbody id="doc-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Ask -->
+      <section class="page" id="page-ask" aria-labelledby="h-ask" hidden>
+        <div class="page-head"><div><h1 id="h-ask">Ask your documents</h1><p>Answers use only your indexed files.</p></div></div>
+        <form class="a-card composer" id="ask-form" role="search">
+          <label class="sr" for="ask-input">Your question</label>
+          <textarea id="ask-input" rows="2" autocomplete="off" placeholder="Ask a question about your documents…"></textarea>
+          <div class="composer-bar">
+            <div class="scope"><label for="scope">Search in</label><select id="scope"></select></div>
+            <span class="composer-hint"><kbd>Enter</kbd> to ask · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
+            <button type="submit" class="a-btn ask-btn" id="ask-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Ask</button>
+          </div>
+        </form>
+        <div class="try"><span>Try asking</span><div class="chips" id="chips"></div></div>
+        <div id="ask-result" aria-live="polite">
+          <div class="a-card empty"><b>Ask your first question</b>Pick a suggestion above or type your own. Answers appear here with their sources.</div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section class="page" id="page-history" aria-labelledby="h-hist" hidden>
+        <div class="page-head">
+          <div><h1 id="h-hist">Search history</h1><p>Your past questions. Click one to reopen it.</p></div>
+          <button type="button" class="a-btn ghost" id="clear-hist">Clear history</button>
+        </div>
+        <div class="tools-row"><label class="sr" for="hist-search">Search your history</label><input class="a-input" id="hist-search" type="search" placeholder="Search your past questions" /></div>
+        <div class="a-card"><ul class="hist" id="hist-list" style="list-style:none"></ul></div>
+      </section>
+
+      <!-- Admin: evaluation -->
+      <section class="page" id="page-admin" aria-labelledby="h-admin" hidden>
+        <div class="page-head">
+          <div><h1 id="h-admin">Evaluation dashboard</h1><p>Runs a 10-question test set against the sample documents.</p></div>
+          <button type="button" class="a-btn" id="run-eval">Run evaluation</button>
+        </div>
+        <div class="metrics">
+          <div class="a-card metric"><span>Correct document in top 5</span><b id="m-ret">–</b><small id="m-ret-t">Target 80% or more</small></div>
+          <div class="a-card metric"><span>Answer from correct document</span><b id="m-top">–</b><small id="m-top-t">Target 80% or more</small></div>
+          <div class="a-card metric"><span>“Not found” when it should be</span><b id="m-nf">–</b><small id="m-nf-t">Target 90% or more</small></div>
+          <div class="a-card metric"><span>Helpful feedback</span><b id="m-fb">–</b><small id="m-fb-t">No ratings yet</small></div>
+        </div>
+        <div class="a-card tbl-wrap">
+          <table class="a-tbl">
+            <caption class="sr">Test questions and results</caption>
+            <thead><tr><th scope="col">Test question</th><th scope="col">Expected</th><th scope="col">Top source</th><th scope="col">Result</th></tr></thead>
+            <tbody id="eval-rows"><tr><td colspan="4" style="color:var(--a-sub)">Run the evaluation to see results.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Admin: coverage gaps -->
+      <section class="page" id="page-gaps" aria-labelledby="h-gaps" hidden>
+        <div class="page-head"><div><h1 id="h-gaps">Coverage gaps</h1><p>What people ask that your documents can’t answer, and where your documents contradict each other.</p></div></div>
+        <h2 class="sec-title">Unanswered questions</h2>
+        <p class="sec-sub">Questions that got “not found”, grouped by topic. Each group is a document worth adding.</p>
+        <div class="a-card"><ul class="gap-list" id="gap-list"></ul></div>
+        <h2 class="sec-title">Documents that disagree</h2>
+        <p class="sec-sub">Found while answering questions. Update or remove the outdated document so answers stay consistent.</p>
+        <div class="a-card"><ul class="gap-list" id="conflict-list"></ul></div>
+        <p style="font-size:13px;color:var(--a-muted)">In this demo, gaps come from questions asked on this device. In the full app they’re collected across all users.</p>
+      </section>
+
+      <!-- Admin: users -->
+      <section class="page" id="page-users" aria-labelledby="h-users" hidden>
+        <div class="page-head"><div><h1 id="h-users">People and roles</h1><p>Choose who can use SearchLab.AI and what they can do.</p></div></div>
+        <form class="a-card invite" id="invite-form" novalidate>
+          <label class="sr" for="inv-name">Name</label><input class="a-input" id="inv-name" placeholder="Name" autocomplete="off" />
+          <label class="sr" for="inv-email">Email</label><input class="a-input" id="inv-email" type="email" placeholder="Email address" autocomplete="off" />
+          <label class="sr" for="inv-role">Role</label><select class="a-select" id="inv-role" style="min-height:42px"><option>User</option><option>Admin</option></select>
+          <button type="submit" class="a-btn" id="inv-btn">Invite</button>
+          <p class="err" id="inv-err" hidden></p>
+        </form>
+        <p class="notice ok" id="user-notice" role="status" hidden></p>
+        <div class="a-card tbl-wrap">
+          <table class="a-tbl">
+            <caption class="sr">People with access</caption>
+            <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Last active</th><th scope="col"><span class="sr">Actions</span></th></tr></thead>
+            <tbody id="user-rows"></tbody>
+          </table>
+        </div>
+        <p style="font-size:14px;color:var(--a-sub)">Admins can manage people and run evaluations. Users can upload documents and ask questions about their own files.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // ── Dot-grid canvas ──
+    (function () {
+      const SPACING = 28;
+      const canvas = document.getElementById("grid-canvas");
+      const host = document.querySelector(".hero");
+      const ctx = canvas.getContext("2d");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const t0 = performance.now();
+      let W = 0, H = 0, raf = 0, mouse = null, smooth = null, ripples = [];
+
+      function resize() {
+        const r = canvas.getBoundingClientRect();
+        const d = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.round(r.width * d));
+        canvas.height = Math.max(1, Math.round(r.height * d));
+        ctx.setTransform(d, 0, 0, d, 0, 0);
+        W = r.width; H = r.height;
+        draw(performance.now());
+      }
+
+      function draw(now) {
+        const S = SPACING, t = (now - t0) / 1000, R = 170;
+        if (mouse) {
+          if (!smooth) smooth = { ...mouse };
+          smooth.x += (mouse.x - smooth.x) * 0.18;
+          smooth.y += (mouse.y - smooth.y) * 0.18;
+        }
+        const m = mouse ? smooth : null;
+        ripples = ripples.filter(r => now - r.t < 1600);
+        ctx.clearRect(0, 0, W, H);
+        const ox = S / 2, oy = S / 2;
+        for (let y = oy; y <= H; y += S) {
+          for (let x = ox; x <= W; x += S) {
+            let k = 0, px = x, py = y;
+            if (m) {
+              const dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy);
+              if (d < R) { k = 1 - d / R; k = k * k * (3 - 2 * k); if (d > 0.5) { px += (dx/d)*k*3; py += (dy/d)*k*3; } }
+            }
+            for (const r of ripples) {
+              const rad = ((now - r.t) / 1600) * 520;
+              const d = Math.hypot(x - r.x, y - r.y);
+              const band = Math.max(0, 1 - Math.abs(d - rad) / 34) * (1 - (now - r.t) / 1600);
+              k = Math.max(k, band);
+            }
+            const wave = reduce ? 0 : Math.pow((Math.sin(x*0.012 + y*0.008 - t*0.9)+1)*0.5, 4);
+            if (k < 0.02 && wave < 0.08) continue;
+            const size = 1.5 + wave*0.8 + k*2.6;
+            const a = Math.min(1, wave*0.55*(0.15+(0.85*x)/W) + k*0.85);
+            const kk = Math.max(k, 0.7);
+            const rr = Math.round(86+(29-86)*kk), g = Math.round(96+(91-96)*kk), b = Math.round(100+(71-100)*kk);
+            ctx.fillStyle = `rgba(${rr},${g},${b},${a.toFixed(3)})`;
+            if (k > 0.55) { const s=size*1.6; ctx.fillRect(px-s/2,py-s/2,s,s); }
+            else { ctx.beginPath(); ctx.arc(px,py,size,0,Math.PI*2); ctx.fill(); }
+          }
+        }
+        if (m) {
+          const cx = Math.round((m.x-ox)/S)*S+ox, cy = Math.round((m.y-oy)/S)*S+oy;
+          ctx.strokeStyle="rgba(29,91,71,0.55)"; ctx.lineWidth=1;
+          ctx.strokeRect(cx-S/2+0.5,cy-S/2+0.5,S-1,S-1);
+          ctx.fillStyle="rgba(245,226,124,0.55)";
+          ctx.fillRect(cx-S/2+1,cy-S/2+1,S-2,S-2);
+        }
+      }
+
+      function pos(e) { const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+      host.addEventListener("pointermove", e => { mouse=pos(e); if(reduce){smooth=mouse;draw(performance.now());} });
+      host.addEventListener("pointerleave", () => { mouse=null;smooth=null; if(reduce)draw(performance.now()); });
+      host.addEventListener("pointerdown", e => { if(!reduce)ripples.push({...pos(e),t:performance.now()}); });
+      new ResizeObserver(resize).observe(canvas);
+      resize();
+      if (!reduce) { const loop=now=>{draw(now);raf=requestAnimationFrame(loop);}; raf=requestAnimationFrame(loop); }
+    })();
+
+
+    // ── Interactive dot grid on the green CTA band (light dots on green) ──
+    (function () {
+      const S = 28;
+      const canvas = document.getElementById("cta-canvas");
+      const host = document.getElementById("cta");
+      if (!canvas || !host) return;
+      const ctx = canvas.getContext("2d");
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const coarse = window.matchMedia("(pointer: coarse)").matches;
+      const t0 = performance.now();
+      let W = 0, H = 0, mouse = null, smooth = null, ripples = [], visible = false;
+      function resize() {
+        const r = canvas.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.max(1, Math.round(r.width * d)); canvas.height = Math.max(1, Math.round(r.height * d));
+        ctx.setTransform(d, 0, 0, d, 0, 0); W = r.width; H = r.height; draw(performance.now());
+      }
+      function draw(now) {
+        const t = (now - t0) / 1000, R = 170;
+        if (mouse) { if (!smooth) smooth = { ...mouse }; smooth.x += (mouse.x - smooth.x) * 0.18; smooth.y += (mouse.y - smooth.y) * 0.18; }
+        const m = mouse ? smooth : null;
+        ripples = ripples.filter(r => now - r.t < 1600);
+        ctx.clearRect(0, 0, W, H);
+        const o = S / 2;
+        for (let y = o; y <= H; y += S) for (let x = o; x <= W; x += S) {
+          let k = 0, px = x, py = y;
+          if (m) { const dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy);
+            if (d < R) { k = 1 - d / R; k = k * k * (3 - 2 * k); if (d > 0.5) { px += dx / d * k * 3; py += dy / d * k * 3; } } }
+          for (const r of ripples) { const rad = ((now - r.t) / 1600) * 520, d = Math.hypot(x - r.x, y - r.y);
+            k = Math.max(k, Math.max(0, 1 - Math.abs(d - rad) / 34) * (1 - (now - r.t) / 1600)); }
+          const wave = reduce ? 0 : Math.pow((Math.sin(x * 0.012 + y * 0.008 - t * 0.9) + 1) * 0.5, 4);
+          if (k < 0.02 && wave < 0.08) continue;
+          const size = 1.4 + wave * 0.7 + k * 2.4;
+          const a = Math.min(1, wave * 0.35 + k * 0.85);
+          ctx.fillStyle = `rgba(190,232,212,${a.toFixed(3)})`;
+          if (k > 0.55) { const q = size * 1.6; ctx.fillRect(px - q / 2, py - q / 2, q, q); }
+          else { ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI * 2); ctx.fill(); }
+        }
+        if (m) {
+          const cx = Math.round((m.x - o) / S) * S + o, cy = Math.round((m.y - o) / S) * S + o;
+          ctx.strokeStyle = "rgba(245,226,124,0.75)"; ctx.lineWidth = 1;
+          ctx.strokeRect(cx - S / 2 + 0.5, cy - S / 2 + 0.5, S - 1, S - 1);
+          ctx.fillStyle = "rgba(245,226,124,0.2)"; ctx.fillRect(cx - S / 2 + 1, cy - S / 2 + 1, S - 2, S - 2);
+        }
+      }
+      const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+      const overUI = e => !!e.target.closest("a, button");
+      host.addEventListener("pointermove", e => { if (coarse) return; mouse = overUI(e) ? null : pos(e); if (!mouse) smooth = null; if (reduce) { smooth = mouse; draw(performance.now()); } });
+      host.addEventListener("pointerleave", () => { mouse = null; smooth = null; if (reduce) draw(performance.now()); });
+      host.addEventListener("pointerdown", e => { if (!reduce && !overUI(e)) ripples.push({ ...pos(e), t: performance.now() }); });
+      new ResizeObserver(resize).observe(canvas);
+      // Only animate while the band is on screen.
+      new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(host);
+      resize();
+      if (!reduce) { const loop = now => { if (visible && !document.hidden) draw(now); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+    })();
+    // ── Nav scroll style ──
+    const nav = document.getElementById("nav");
+    window.addEventListener("scroll", () => {
+      nav.classList.toggle("scrolled", window.scrollY > 20);
+    }, { passive: true });
+
+    // ── Scroll reveal ──
+    const reveals = document.querySelectorAll(".reveal");
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => io.observe(el));
+
+    // ── FAQ accordion ──
+    document.querySelectorAll(".faq-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item = btn.closest(".faq-item");
+        const isOpen = item.classList.contains("open");
+        document.querySelectorAll(".faq-item.open").forEach(i => i.classList.remove("open"));
+        if (!isOpen) item.classList.add("open");
+        btn.setAttribute("aria-expanded", (!isOpen).toString());
+      });
+    });
+
+    // ── Sign-up modal ──
+    const modal = document.getElementById("signup-modal");
+    const openBtn = document.getElementById("open-signup");
+    const closeBtn = document.getElementById("close-signup");
+    const switchToSignin = document.getElementById("switch-to-signin");
+
+    function openModal(e) {
+      e && e.preventDefault();
+      modal.classList.add("open");
+      document.body.style.overflow = "hidden";
+      modal.querySelector("input").focus();
+    }
+    function closeModal() {
+      modal.classList.remove("open");
+      document.body.style.overflow = "";
+    }
+    openBtn.addEventListener("click", openModal);
+    closeBtn.addEventListener("click", closeModal);
+    document.querySelector("a[href='#cta'].btn-primary")?.addEventListener("click", openModal);
+    switchToSignin.addEventListener("click", () => {
+      closeModal();
+      document.getElementById("signin-form").querySelector("input").focus();
+      document.getElementById("signin-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+
+    // ══════════════════════════════════════════
+    //  APP LOGIC
+    // ══════════════════════════════════════════
+    const appEl = document.getElementById("app");
+    const landingEls = document.querySelectorAll("#nav, .hero, #features, #how, #testimonials, #faq, #cta, footer");
+
+    // ── Helpers ──
+    // Everything shown from documents or questions is escaped first: uploaded files are untrusted.
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    }
+    const $ = id => document.getElementById(id);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const wait = ms => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+    const today = () => new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    const nowTime = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+    // ── Sample documents (the demo library) ──
+    const SAMPLE_DOCS = [
+      { name: "Intern leave policy.txt", type: "TXT", added: "20 Nov 2026", text:
+`Interns are entitled to 1.5 days of paid leave for every month of their internship. Leave is credited at the start of each month, and unused days do not carry over once the internship ends.
+
+Leave requests must be submitted on the HR portal at least three working days in advance and approved by the reporting manager. In case of sudden illness or an emergency, the intern must inform their manager on the same day.
+
+Public holidays announced by the company are not counted as leave. Interns who are absent for more than two consecutive days due to illness must submit a medical certificate.` },
+      { name: "Employee handbook.txt", type: "TXT", added: "20 Nov 2026", text:
+`Standard working hours are 9:30 am to 6:00 pm, Monday to Friday, with a one-hour lunch break. Employees may work from home up to two days a week with their manager's approval.
+
+To claim travel reimbursement, submit the expense form on the finance portal within 30 days of travel, with the original receipts attached. Claims are approved by the reporting manager and paid with the next salary.
+
+All leave requests must be submitted on the HR portal at least five working days in advance and approved by the reporting manager.
+
+If you lose your security badge, report it to the facilities desk immediately. A temporary badge is issued the same day, and a replacement badge costs 500 rupees.
+
+Employees receive 8 days of sick leave per year. A medical certificate is needed for sick leave longer than two consecutive days.` },
+      { name: "NLP lecture notes.txt", type: "TXT", added: "20 Nov 2026", text:
+`Semantic search ranks documents by meaning rather than exact keywords. Text is converted into vector embeddings, and the passages whose vectors are closest to the question's vector are ranked highest, usually measured by cosine similarity.
+
+Retrieval-augmented generation, or RAG, first retrieves relevant passages and then asks a language model to answer using only those passages. Because the model is grounded in retrieved text, RAG reduces hallucination and lets every answer cite its sources.
+
+Chunking splits long documents into smaller passages before embedding. Smaller chunks make retrieval more precise, while overlapping chunks help keep context across chunk boundaries.` }
+    ];
+    const SUGGESTIONS = ["How many days in advance should I request leave?", "What is the leave policy for interns?", "trainee absence rules", "How do I claim travel reimbursement?", "Why does RAG reduce hallucination?", "What is the CEO’s salary?"];
+    const EVAL_SET = [
+      ["What is the leave policy for interns?", "Intern leave policy.txt"],
+      ["trainee absence rules", "Intern leave policy.txt"],
+      ["How many days of paid leave do interns get?", "Intern leave policy.txt"],
+      ["What are the working hours?", "Employee handbook.txt"],
+      ["How do I claim travel reimbursement?", "Employee handbook.txt"],
+      ["What happens if I lose my security badge?", "Employee handbook.txt"],
+      ["How does semantic search rank documents?", "NLP lecture notes.txt"],
+      ["Why does RAG reduce hallucination?", "NLP lecture notes.txt"],
+      ["What is the CEO’s salary?", null],
+      ["Who won the cricket world cup?", null]
+    ];
+
+    // ── Search engine: a small in-browser stand-in for the real RAG backend ──
+    // TF-IDF vectors with stemming and a synonym map, ranked by cosine similarity.
+    // The real app replaces this with embeddings (MiniLM) + pgvector + an LLM.
+    const STOP = new Set("a an the is are was were be been of to in on for and or with by at from as it its this that these those do does did how what why when where who which can i my me we our you your they their there have has had will would should could about into than then so if not no any all each per many much".split(" "));
+    const SYN = {
+      trainee: "intern", trainees: "intern", interns: "intern", internship: "intern",
+      absence: "leave", absent: "leave", absences: "leave", holiday: "leave", holidays: "leave", vacation: "leave", off: "leave", days: "day",
+      ill: "sick", illness: "sick", sickness: "sick",
+      reimbursement: "reimburs", reimburse: "reimburs", expense: "reimburs", expenses: "reimburs", claim: "reimburs", claims: "reimburs",
+      timing: "hour", timings: "hour", schedule: "hour", hours: "hour",
+      card: "badge", id: "badge", lost: "lose", losing: "lose",
+      hallucination: "hallucin", hallucinate: "hallucin", hallucinations: "hallucin",
+      rank: "rank", ranks: "rank", ranking: "rank", ranked: "rank",
+      rules: "policy", rule: "policy", policies: "policy"
+    };
+    function stem(w) {
+      if (SYN[w]) return SYN[w];
+      if (w.length > 5 && w.endsWith("ing")) w = w.slice(0, -3);
+      else if (w.length > 4 && w.endsWith("ed")) w = w.slice(0, -2);
+      else if (w.length > 4 && w.endsWith("es")) w = w.slice(0, -2);
+      else if (w.length > 3 && w.endsWith("s")) w = w.slice(0, -1);
+      return SYN[w] || w;
+    }
+    const tokens = text => (text.toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !STOP.has(w) && w.length > 1).map(stem);
+    // Split on sentence ends, but not inside numbers like 1.5 or 9:30.
+    const splitSentences = text => text.replace(/\s+/g, " ").split(/(?<=[.!?])\s+(?=[A-Z0-9“"(])/).map(s => s.trim()).filter(Boolean);
+
+    function chunkText(text) {
+      // Paragraphs first; long paragraphs are split into ~70-word chunks on sentence boundaries.
+      const out = [];
+      text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).forEach(p => {
+        let cur = "";
+        for (const s of splitSentences(p)) {
+          if ((cur + " " + s).split(/\s+/).length > 70 && cur) { out.push(cur.trim()); cur = ""; }
+          cur += " " + s;
+        }
+        if (cur.trim()) out.push(cur.trim());
+      });
+      return out;
+    }
+
+    let state = { docs: [], history: [], feedback: {}, theme: "light", asked: 0, conflicts: [] };
+    let index = { chunks: [], idf: {} };
+    let nextId = 1;
+
+    function rebuildIndex() {
+      const chunks = [];
+      state.docs.filter(d => d.status === "ready").forEach(d => d.chunks.forEach((text, i) =>
+        chunks.push({ docId: d.id, doc: d.name, n: i + 1, of: d.chunks.length, text, tf: tf(tokens(text)) })));
+      const df = {};
+      chunks.forEach(c => Object.keys(c.tf).forEach(t => df[t] = (df[t] || 0) + 1));
+      const N = chunks.length || 1, idf = {};
+      Object.keys(df).forEach(t => idf[t] = Math.log(1 + N / df[t]));
+      chunks.forEach(c => { c.vec = weigh(c.tf, idf); c.norm = norm(c.vec); });
+      index = { chunks, idf };
+    }
+    function tf(toks) { const m = {}; toks.forEach(t => m[t] = (m[t] || 0) + 1); return m; }
+    function weigh(tfm, idf) { const v = {}; for (const t in tfm) if (idf[t]) v[t] = (1 + Math.log(tfm[t])) * idf[t]; return v; }
+    function norm(v) { let s = 0; for (const t in v) s += v[t] * v[t]; return Math.sqrt(s) || 1; }
+
+    const THRESHOLD = 0.2;   // below this, the answer is "not found"
+    function search(question, scopeId) {
+      const qv = weigh(tf(tokens(question)), index.idf), qn = norm(qv);
+      const scored = index.chunks
+        .filter(c => !scopeId || scopeId === "all" || String(c.docId) === String(scopeId))
+        .map(c => { let dot = 0; for (const t in qv) if (c.vec[t]) dot += qv[t] * c.vec[t]; return { ...c, score: dot / (qn * c.norm) }; })
+        .sort((a, b) => b.score - a.score);
+      const top = scored.slice(0, 5);
+      const best = top[0] ? top[0].score : 0;
+      // Not found if the score is low, or if the best passage matches only one word of a longer question
+      // (e.g. "CEO's salary" should not be answered by a passage that merely mentions "salary").
+      const qTerms = [...new Set(tokens(question))];
+      const hits = top[0] ? qTerms.filter(t => top[0].tf[t]).length : 0;
+      const enough = hits >= Math.min(2, qTerms.length);
+      const info = { searched: scored.length, docs: new Set(scored.map(c => c.docId)).size, best, hits, qTerms: qTerms.length, enough };
+      if (best < THRESHOLD || !enough) return { found: false, closest: top.filter(c => c.score > 0).slice(0, 2), qTokens: Object.keys(qv), info };
+      const used = top.filter(c => c.score >= THRESHOLD && c.score >= best * 0.55).slice(0, 3);
+      return { found: true, sources: used, top5: top, qTokens: Object.keys(qv), info };
+    }
+    // Extractive answer: the best-matching sentence from each source, with its citation number.
+    function bestSentence(chunk, qTokens) {
+      const q = new Set(qTokens);
+      let best = null, bestScore = -1;
+      splitSentences(chunk.text).forEach(s => {
+        const toks = tokens(s), hit = toks.filter(t => q.has(t)).length;
+        const sc = hit / Math.sqrt(toks.length || 1);
+        if (sc > bestScore) { bestScore = sc; best = s; }
+      });
+      return best || chunk.text;
+    }
+
+    // ── Persistence (one viewer, one browser; safe if storage is blocked) ──
+    function save() {
+      try { localStorage.setItem("searchlab-demo-v2", JSON.stringify({ docs: state.docs.filter(d => !d.sample), history: state.history, feedback: state.feedback, theme: state.theme, asked: state.asked, removed: state.removed || [], users: state.users, conflicts: state.conflicts })); } catch (e) {}
+    }
+    function load() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem("searchlab-demo-v2") || "{}"); } catch (e) {}
+      state.removed = saved.removed || [];
+      state.docs = SAMPLE_DOCS.filter(d => !state.removed.includes(d.name))
+        .map(d => ({ ...d, id: nextId++, sample: true, status: "ready", chunks: chunkText(d.text) }));
+      (saved.docs || []).forEach(d => state.docs.push({ ...d, id: nextId++ }));
+      state.history = saved.history || [];
+      state.feedback = saved.feedback || {};
+      state.theme = saved.theme || "light";
+      state.asked = saved.asked || 0;
+      state.conflicts = saved.conflicts || [];
+      state.users = saved.users || [
+        { name: "Nandhishwar Reddy G", email: "nandhishwar@example.com", role: "Admin", active: true, last: "Today" },
+        { name: "Srikruthika Katta", email: "srikruthika@example.com", role: "User", active: true, last: "Yesterday" },
+        { name: "Sindhuja K", email: "sindhuja@example.com", role: "User", active: true, last: "22 Nov 2026" },
+        { name: "Guest tester", email: "guest@example.com", role: "User", active: false, last: "18 Nov 2026" }
+      ];
+      rebuildIndex();
+    }
+
+    // ── Navigation inside the app ──
+    let role = "user";
+    function showPage(name) {
+      if (name === "admin" && role !== "admin") name = "documents";
+      if ((name === "users" || name === "gaps") && role !== "admin") name = "documents";
+      ["documents", "ask", "history", "admin", "users", "gaps"].forEach(p => { $("page-" + p).hidden = p !== name; });
+      document.querySelectorAll(".app-nav button").forEach(b => b.toggleAttribute("aria-current", false));
+      const btn = document.querySelector(`.app-nav button[data-page="${name}"]`);
+      if (btn) btn.setAttribute("aria-current", "page");
+      $("app-main").scrollTop = 0;
+      if (name === "documents") renderDocs();
+      if (name === "ask") { renderScope(); setTimeout(() => $("ask-input").focus(), 0); }
+      if (name === "history") renderHistory();
+      if (name === "admin") renderFeedbackMetric();
+      if (name === "users") renderUsers();
+      if (name === "gaps") renderGaps();
+    }
+    document.querySelectorAll(".app-nav button").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page)));
+
+    // ── Documents page ──
+    function renderStats() {
+      const ready = state.docs.filter(d => d.status === "ready");
+      $("st-docs").textContent = state.docs.length;
+      $("st-chunks").textContent = ready.reduce((s, d) => s + d.chunks.length, 0);
+      $("st-qs").textContent = state.asked;
+    }
+    function renderDocs() {
+      renderStats();
+      const rows = state.docs.map(d => {
+        const status = d.status === "ready" ? '<span class="status ok">Indexed</span>'
+          : d.status === "processing" ? '<span class="status busy">Processing…</span>'
+          : `<span class="status bad">${escapeHTML(d.error || "Failed")}</span>`;
+        return `<tr><td><b>${escapeHTML(d.name)}</b></td><td>${escapeHTML(d.type)}</td><td>${escapeHTML(d.added)}</td>
+          <td>${d.status === "ready" ? d.chunks.length : "–"}</td><td>${status}</td>
+          <td style="text-align:right"><button type="button" class="a-btn ghost sm" data-del="${d.id}" aria-label="Delete ${escapeHTML(d.name)}">Delete</button></td></tr>`;
+      }).join("");
+      $("doc-rows").innerHTML = rows || '<tr><td colspan="6" style="color:var(--a-sub)">No documents yet. Upload a file or paste some text to get started.</td></tr>';
+    }
+    $("doc-rows").addEventListener("click", e => {
+      const b = e.target.closest("[data-del]");
+      if (!b) return;
+      const d = state.docs.find(x => String(x.id) === b.dataset.del);
+      if (!d) return;
+      if (d.sample) state.removed.push(d.name);
+      state.docs = state.docs.filter(x => x !== d);
+      rebuildIndex(); save(); renderDocs();
+      notice(`Deleted “${d.name}”. It no longer appears in answers.`, "ok");
+    });
+    function notice(msg, kind) {
+      const n = $("doc-notice");
+      n.textContent = msg; n.className = "notice " + kind; n.hidden = !msg;
+    }
+
+    const MAX = 10 * 1024 * 1024;
+    async function readFile(file) {
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (ext === "txt") return await file.text();
+      if (ext === "pdf") {
+        const pdfjs = await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", "pdfjsLib");
+        pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+        const pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const c = await (await pdf.getPage(i)).getTextContent();
+          pages.push(c.items.map(it => it.str).join(" "));
+        }
+        return pages.join("\n\n");
+      }
+      if (ext === "docx") {
+        const mammoth = await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js", "mammoth");
+        return (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+      }
+      throw new Error("type");
+    }
+    const loaded = {};
+    function loadScript(src, globalName) {
+      if (window[globalName]) return Promise.resolve(window[globalName]);
+      if (!loaded[src]) loaded[src] = new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = src; s.onload = () => res(window[globalName]); s.onerror = () => rej(new Error("load"));
+        document.head.appendChild(s);
+      });
+      return loaded[src];
+    }
+
+    async function addFiles(files) {
+      notice("", "ok");
+      for (const file of files) {
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (!["pdf", "docx", "txt"].includes(ext)) { notice(`“${file.name}” wasn’t added. Use a PDF, DOCX or TXT file.`, "err"); continue; }
+        if (file.size > MAX) { notice(`“${file.name}” is larger than 10 MB. Split it or upload a smaller file.`, "err"); continue; }
+        const doc = { id: nextId++, name: file.name, type: ext.toUpperCase(), added: today(), status: "processing", chunks: [] };
+        state.docs.unshift(doc); renderDocs();
+        try {
+          const text = (await readFile(file)).trim();
+          if (text.replace(/\s/g, "").length < 20) throw new Error("empty");
+          doc.chunks = chunkText(text); doc.status = "ready"; doc.text = text;
+          notice(`“${file.name}” is ready: ${doc.chunks.length} passage${doc.chunks.length === 1 ? "" : "s"} indexed. You can ask about it now.`, "ok");
+        } catch (err) {
+          doc.status = "failed";
+          doc.error = err.message === "empty" ? "No readable text (scanned?)" : err.message === "load" ? "Couldn’t load the file reader" : "Couldn’t read this file";
+          notice(err.message === "empty"
+            ? `“${file.name}” has no readable text. Scanned documents need OCR, which isn’t supported yet.`
+            : `“${file.name}” couldn’t be read. Check the file isn’t corrupted or password-protected.`, "err");
+        }
+        rebuildIndex(); save(); renderDocs();
+      }
+    }
+    const drop = $("drop"), fileInput = $("file-input");
+    drop.addEventListener("click", () => fileInput.click());
+    drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+    $("upload-btn").addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => { addFiles([...fileInput.files]); fileInput.value = ""; });
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); addFiles([...e.dataTransfer.files]); });
+    $("paste-add").addEventListener("click", () => {
+      const name = $("paste-name").value.trim() || "Pasted text";
+      const text = $("paste-text").value.trim();
+      if (text.length < 20) { notice("Paste at least a sentence or two of text to add a document.", "err"); return; }
+      const doc = { id: nextId++, name: name.endsWith(".txt") ? name : name + ".txt", type: "TXT", added: today(), status: "ready", text, chunks: chunkText(text) };
+      state.docs.unshift(doc); rebuildIndex(); save(); renderDocs();
+      $("paste-name").value = ""; $("paste-text").value = "";
+      notice(`“${doc.name}” is ready: ${doc.chunks.length} passage${doc.chunks.length === 1 ? "" : "s"} indexed.`, "ok");
+    });
+
+    // ── Ask page ──
+    function renderScope() {
+      const sel = $("scope"), cur = sel.value;
+      const ready = state.docs.filter(d => d.status === "ready");
+      sel.innerHTML = `<option value="all">All documents (${ready.length})</option>` + ready.map(d => `<option value="${d.id}">${escapeHTML(d.name)}</option>`).join("");
+      if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    }
+    $("chips").innerHTML = SUGGESTIONS.map(s => `<button type="button" class="chip">${escapeHTML(s)}</button>`).join("");
+    $("chips").addEventListener("click", e => { const c = e.target.closest(".chip"); if (c) { $("ask-input").value = c.textContent; growInput(); ask(c.textContent); } });
+
+    let busy = false;
+    async function ask(question, fromHistory) {
+      question = (question || "").trim();
+      if (!question || busy) return;
+      if (!index.chunks.length) {
+        $("ask-result").innerHTML = '<div class="a-card empty"><b>No documents to search</b>Upload or paste a document on the Documents page first.</div>';
+        return;
+      }
+      busy = true; $("ask-btn").disabled = true;
+      const steps = ["Embed question", "Search vector index", "Check relevance", "Generate answer"];
+      $("ask-result").innerHTML = `<div class="a-card pipeline" role="status">${steps.map((s, i) => `<div class="pstep" id="sp${i}"><i></i>${i + 1} · ${s}</div>`).join("")}</div>`;
+      for (let i = 0; i < steps.length; i++) {
+        $("sp" + i).className = "pstep active";
+        await wait(320);
+        $("sp" + i).className = "pstep done";
+      }
+      const res = search(question, $("scope").value);
+      await renderAnswer(question, res);
+      if (!fromHistory) {
+        state.asked++;
+        state.history.unshift({ q: question, time: nowTime(), date: today(), found: res.found, n: res.found ? res.sources.length : 0 });
+        state.history = state.history.slice(0, 50);
+        save();
+      }
+      busy = false; $("ask-btn").disabled = false;
+    }
+    // ── Sources disagree: two passages from different documents that talk about the same thing
+    //    (most of the same words) but give different numbers. ──
+    const NUMWORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, twenty: 20, thirty: 30, half: 0.5 };
+    function numbersIn(text) {
+      const out = new Set();
+      (text.toLowerCase().match(/\d+(?:\.\d+)?|[a-z]+/g) || []).forEach(w => {
+        if (/^\d/.test(w)) out.add(parseFloat(w)); else if (NUMWORDS[w] !== undefined) out.add(NUMWORDS[w]);
+      });
+      return out;
+    }
+    const isNumTok = t => /^\d/.test(t) || NUMWORDS[t] !== undefined;
+    function findConflicts(sources, sentences) {
+      const out = [];
+      for (let i = 0; i < sources.length; i++) for (let j = i + 1; j < sources.length; j++) {
+        if (sources[i].docId === sources[j].docId) continue;
+        const a = new Set(tokens(sentences[i]).filter(t => !isNumTok(t))), b = new Set(tokens(sentences[j]).filter(t => !isNumTok(t)));
+        const inter = [...a].filter(t => b.has(t)).length, uni = new Set([...a, ...b]).size || 1;
+        const na = numbersIn(sentences[i]), nb = numbersIn(sentences[j]);
+        const shareNum = [...na].some(n => nb.has(n));
+        if (inter / uni >= 0.3 && na.size && nb.size && !shareNum) out.push({ i, j });
+      }
+      return out;
+    }
+    const markNumbers = html => html.replace(/\b(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty)\b/gi, "<em>$1</em>");
+    function conflictBox(sources, sentences, conflicts) {
+      const c = conflicts[0];
+      const item = k => `<div class="conflict-item"><b><span class="cnum">${k + 1}</span>${escapeHTML(sources[k].doc)}</b><q>${markNumbers(escapeHTML(sentences[k]))}</q></div>`;
+      return `<div class="conflict" role="note">
+        <div class="conflict-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4"/><path d="M12 17.5v.5"/></svg>Sources disagree</div>
+        <p>These documents give different answers. SearchLab.AI shows both instead of picking one, so check which document is current before relying on this.</p>
+        <div class="conflict-grid">${item(c.i)}${item(c.j)}</div></div>`;
+    }
+    function recordConflict(question, sources, sentences, c) {
+      const docs = [sources[c.i].doc, sources[c.j].doc].sort();
+      const key = docs.join("|") + "|" + [sentences[c.i], sentences[c.j]].sort().join("|");
+      const hit = state.conflicts.find(x => x.key === key);
+      if (hit) { hit.count++; hit.last = today(); hit.q = question; }
+      else state.conflicts.unshift({ key, docs, a: sentences[c.i], b: sentences[c.j], q: question, count: 1, last: today() });
+      save();
+    }
+
+    // ── "How I searched": the interpretation and numbers behind the answer ──
+    function howISearched(question, res) {
+      const seen = new Set();
+      const words = (question.toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !STOP.has(w) && w.length > 1)
+        .filter(w => { const k = stem(w); if (seen.has(k)) return false; seen.add(k); return true; });
+      const terms = words.map(w => {
+        const k = stem(w);
+        return SYN[w] && SYN[w] !== w ? `<span class="term">${escapeHTML(w)} <s>→</s> ${escapeHTML(k)}</span>` : `<span class="term">${escapeHTML(k)}</span>`;
+      }).join("");
+      const i = res.info;
+      const verdict = res.found
+        ? `Used ${res.sources.length} passage${res.sources.length > 1 ? "s" : ""} scoring at least 55% of the best match.`
+        : !i.enough && i.best >= THRESHOLD
+          ? `Not answered: the best passage matched only ${i.hits} of your ${i.qTerms} key terms, so it wasn’t really about your question.`
+          : `Not answered: the best match was below the ${THRESHOLD} relevance threshold.`;
+      return `<details class="how"><summary>How I searched</summary><ul>
+        <li>Read your question as ${terms || "<span class=\"term\">(no searchable words)</span>"}</li>
+        <li>Compared it with ${i.searched} passage${i.searched === 1 ? "" : "s"} across ${i.docs} document${i.docs === 1 ? "" : "s"}.</li>
+        <li>Best match scored ${i.best.toFixed(2)} (answers need at least ${THRESHOLD}, matching ${Math.min(2, i.qTerms)} or more of your key terms).</li>
+        <li>${verdict}</li></ul></details>`;
+    }
+
+    function sourceCard(c, i, sentence, dim) {
+      const pct = Math.round(Math.max(0, Math.min(1, c.score)) * 100);
+      let body = escapeHTML(c.text);
+      if (sentence) body = body.replace(escapeHTML(sentence), `<mark>${escapeHTML(sentence)}</mark>`);
+      return `<article class="a-card source${dim ? " dim" : ""}" id="src${i + 1}">
+        <div class="source-top"><span class="source-name"><span class="cnum">${i + 1}</span>${escapeHTML(c.doc)}</span>
+        <span class="rel">Relevance ${c.score.toFixed(2)} <i><u style="width:${pct}%"></u></i></span></div>
+        <p>${body}</p><small>Passage ${c.n} of ${c.of}</small></article>`;
+    }
+    function renderAnswer(question, res) {
+      const key = question.toLowerCase();
+      if (!res.found) {
+        $("ask-result").innerHTML = `<div class="a-card answer">
+          <div class="answer-label">Answer</div>
+          <div class="not-found"><b>This isn’t in your documents.</b>No passage matched “${escapeHTML(question)}” closely enough to answer, so SearchLab.AI won’t guess. Try rephrasing, or upload a document that covers it.</div>
+          ${howISearched(question, res)}
+        </div>` + (res.closest.length ? `<p class="answer-label" style="margin:18px 0 10px">Closest passages (below the ${THRESHOLD} relevance threshold, not used)</p><div class="sources">${res.closest.map((c, i) => sourceCard(c, i, null, true)).join("")}</div>` : "");
+        return;
+      }
+      const sentences = res.sources.map(c => bestSentence(c, res.qTokens));
+      // Build the answer as word and citation tokens, so it can be revealed like a streamed response.
+      const seen = new Set(), toks = [];
+      sentences.forEach((sen, i) => {
+        if (seen.has(sen)) return; seen.add(sen);
+        sen.split(/(?<= )/).forEach(w => toks.push({ w }));
+        toks.push({ n: i + 1 });
+      });
+      const plain = toks.filter(t => t.w).map(t => t.w).join("");
+      const conflicts = findConflicts(res.sources, sentences);
+      if (conflicts.length) recordConflict(question, res.sources, sentences, conflicts[0]);
+      const fb = state.feedback[key];
+      const nSrc = res.sources.length;
+      $("ask-result").innerHTML = `<div class="a-card answer">
+          <div class="answer-label" id="ans-label" role="status">Writing the answer from ${nSrc} passage${nSrc > 1 ? "s" : ""}…</div>
+          <p class="answer-text" id="ans-text"></p>
+          <div id="ans-conflict"></div>
+          <div class="feedback" id="ans-tools">
+            <button type="button" class="a-btn ghost sm" id="stop-btn">Stop generating</button>
+          </div>
+        </div>
+        <div id="ans-sources"></div>`;
+      const out = $("ans-text");
+      let shown = 0, stopped = false;
+      const renderTokens = (done) => {
+        out.innerHTML = toks.slice(0, shown).map(t => t.n ? `<a class="cnum" href="#src${t.n}" aria-label="Source ${t.n}">${t.n}</a> ` : escapeHTML(t.w)).join("") + (done ? "" : '<span class="caret" aria-hidden="true"></span>');
+      };
+      const finish = () => {
+        stopped = true; shown = toks.length; renderTokens(true);
+        $("ans-label").textContent = `Answer · from ${nSrc} passage${nSrc > 1 ? "s" : ""} in your documents` + (conflicts.length ? " · sources disagree" : "");
+        if (conflicts.length) $("ans-conflict").innerHTML = conflictBox(res.sources, sentences, conflicts);
+        $("ans-tools").insertAdjacentHTML("afterend", howISearched(question, res));
+        $("ans-tools").innerHTML = `<span>Was this helpful?</span>
+            <button type="button" class="a-btn ghost sm" data-fb="up" aria-pressed="${fb === "up"}">Helpful</button>
+            <button type="button" class="a-btn ghost sm" data-fb="down" aria-pressed="${fb === "down"}">Not helpful</button>
+            <span id="fb-msg">${fb ? "Thanks, your feedback is saved." : ""}</span>
+            <button type="button" class="a-btn ghost sm push" id="copy-btn">Copy answer</button>`;
+        $("ans-sources").innerHTML = `<p class="answer-label" style="margin:18px 0 10px">Sources · highlighted text is what the answer uses</p>
+          <div class="sources">${res.sources.map((c, i) => sourceCard(c, i, sentences[i])).join("")}</div>`;
+        $("ask-result").querySelectorAll("[data-fb]").forEach(b => b.addEventListener("click", () => {
+          state.feedback[key] = b.dataset.fb; save();
+          $("ask-result").querySelectorAll("[data-fb]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+          $("fb-msg").textContent = "Thanks, your feedback is saved.";
+        }));
+        $("copy-btn").addEventListener("click", async () => {
+          try { await navigator.clipboard.writeText(plain.trim()); $("copy-btn").textContent = "Copied"; }
+          catch (e) { $("copy-btn").textContent = "Copy not allowed here"; }
+          setTimeout(() => { const c = $("copy-btn"); if (c) c.textContent = "Copy answer"; }, 1600);
+        });
+      };
+      $("stop-btn").addEventListener("click", finish);
+      if (reduceMotion) { finish(); return; }
+      return new Promise(resolve => {
+        const id = setInterval(() => {
+          if (stopped) { clearInterval(id); resolve(); return; }
+          shown++; renderTokens(false);
+          if (shown >= toks.length) { clearInterval(id); finish(); resolve(); }
+        }, 40);
+      });
+    }
+    $("ask-form").addEventListener("submit", e => { e.preventDefault(); ask($("ask-input").value); });
+    $("ask-btn").addEventListener("click", e => { e.preventDefault(); ask($("ask-input").value); });
+    $("ask-input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask($("ask-input").value); } });
+    function growInput() { const t = $("ask-input"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 220) + "px"; }
+    $("ask-input").addEventListener("input", growInput);
+
+    // ── History page ──
+    function renderHistory() {
+      const term = ($("hist-search").value || "").toLowerCase().trim();
+      const items = state.history.map((h, i) => ({ h, i })).filter(({ h }) => !term || h.q.toLowerCase().includes(term));
+      $("hist-list").innerHTML = !state.history.length ? '<li class="empty"><b>No questions yet</b>Questions you ask appear here.</li>'
+        : !items.length ? `<li class="empty"><b>No matches</b>No past questions contain “${escapeHTML(term)}”.</li>`
+        : items.map(({ h, i }) => `<li><button type="button" data-h="${i}">
+          <b>${escapeHTML(h.q)}</b>
+          <span>${escapeHTML(h.date === today() ? h.time : h.date)} · ${h.found ? `<span class="ok">${h.n} source${h.n > 1 ? "s" : ""}</span>` : '<span class="nf">Not found</span>'}</span>
+        </button></li>`).join("");
+      $("clear-hist").disabled = !state.history.length;
+    }
+    $("hist-list").addEventListener("click", e => {
+      const b = e.target.closest("[data-h]"); if (!b) return;
+      const h = state.history[+b.dataset.h];
+      showPage("ask"); $("ask-input").value = h.q; growInput(); ask(h.q, true);
+    });
+    $("hist-search").addEventListener("input", renderHistory);
+    $("clear-hist").addEventListener("click", () => { state.history = []; save(); renderHistory(); });
+
+    // ── Admin: evaluation ──
+    function renderFeedbackMetric() {
+      const v = Object.values(state.feedback), up = v.filter(x => x === "up").length, down = v.length - up;
+      $("m-fb").textContent = v.length ? Math.round(up / v.length * 100) + "%" : "–";
+      $("m-fb-t").textContent = v.length ? `${up} helpful, ${down} not helpful` : "No ratings yet";
+    }
+    function setMetric(id, val, target) {
+      $(id).textContent = val + "%";
+      const t = $(id + "-t"); t.textContent = `${val >= target ? "Meets" : "Below"} target (${target}% or more)`;
+      t.className = val >= target ? "met" : "miss";
+    }
+    $("run-eval").addEventListener("click", async () => {
+      const btn = $("run-eval"); btn.disabled = true; btn.textContent = "Running…";
+      $("eval-rows").innerHTML = '<tr><td colspan="4" style="color:var(--a-sub)">Running 10 test questions…</td></tr>';
+      await wait(600);
+      // Evaluate against the sample library only, so results don't depend on what users uploaded.
+      const saved = index;
+      const sampleIds = new Set(state.docs.filter(d => d.sample).map(d => d.id));
+      if (sampleIds.size < SAMPLE_DOCS.length) {
+        // A sample doc was deleted: index the full sample set temporarily.
+        const tmp = SAMPLE_DOCS.map((d, i) => ({ id: "s" + i, name: d.name, status: "ready", chunks: chunkText(d.text) }));
+        const keep = state.docs; state.docs = tmp; rebuildIndex(); state.docs = keep;
+      } else {
+        const keep = state.docs; state.docs = keep.filter(d => d.sample); rebuildIndex(); state.docs = keep;
+      }
+      let ret = 0, top1 = 0, ans = 0, nfOk = 0, nfTotal = 0;
+      const rows = EVAL_SET.map(([q, expected]) => {
+        const r = search(q, "all");
+        let pass, top = r.found ? r.sources[0].doc : "Not found";
+        if (expected) {
+          ans++;
+          const inTop5 = r.found && r.top5.some(c => c.doc === expected);
+          if (inTop5) ret++;
+          pass = r.found && r.sources[0].doc === expected;
+          if (pass) top1++;
+        } else { nfTotal++; pass = !r.found; if (pass) nfOk++; }
+        return `<tr><td>${escapeHTML(q)}</td><td>${escapeHTML(expected || "Not found")}</td><td>${escapeHTML(top)}</td><td class="${pass ? "pass" : "fail"}">${pass ? "Pass" : "Fail"}</td></tr>`;
+      });
+      index = saved;
+      $("eval-rows").innerHTML = rows.join("");
+      setMetric("m-ret", Math.round(ret / ans * 100), 80);
+      setMetric("m-top", Math.round(top1 / ans * 100), 80);
+      setMetric("m-nf", Math.round(nfOk / nfTotal * 100), 90);
+      renderFeedbackMetric();
+      btn.disabled = false; btn.textContent = "Run evaluation";
+    });
+
+    // ── Admin: coverage gaps ──
+    function renderGaps() {
+      const groups = new Map();
+      state.history.filter(h => !h.found).forEach(h => {
+        const key = [...new Set(tokens(h.q))].sort().join(" ") || h.q.toLowerCase();
+        const g = groups.get(key) || { q: h.q, count: 0, last: h.date, terms: key };
+        g.count++; groups.set(key, g);
+      });
+      const list = [...groups.values()].sort((a, b) => b.count - a.count);
+      $("gap-list").innerHTML = list.length ? list.map(g => `<li>
+          <span class="gap-q">${escapeHTML(g.q)}</span>
+          <span class="gap-count">${g.count}<small>time${g.count > 1 ? "s" : ""} asked</small></span>
+          <span class="gap-meta">Topic: ${g.terms.split(" ").map(t => `<span class="term">${escapeHTML(t)}</span>`).join("")} · last asked ${escapeHTML(g.last)} · add a document that covers this</span>
+        </li>`).join("")
+        : '<li class="empty" style="display:block"><b>No unanswered questions yet</b>When a question gets “not found”, it shows up here so you know which document to add.</li>';
+      $("conflict-list").innerHTML = state.conflicts.length ? state.conflicts.map(c => `<li>
+          <span class="gap-q">${escapeHTML(c.docs[0])} vs ${escapeHTML(c.docs[1])}</span>
+          <span class="gap-count">${c.count}<small>time${c.count > 1 ? "s" : ""} seen</small></span>
+          <span class="gap-meta">“${markNumbers(escapeHTML(c.a))}” vs “${markNumbers(escapeHTML(c.b))}” · found when asking “${escapeHTML(c.q)}”</span>
+        </li>`).join("")
+        : '<li class="empty" style="display:block"><b>No disagreements found yet</b>Try asking “How many days in advance should I request leave?”</li>';
+    }
+
+    // ── Admin: users ──
+    let me = { email: "" };
+    function renderUsers() {
+      $("user-rows").innerHTML = state.users.map((u, i) => {
+        const self = u.email.toLowerCase() === me.email.toLowerCase();
+        return `<tr><td><b>${escapeHTML(u.name)}</b>${self ? '<span class="badge">You</span>' : ""}</td>
+          <td class="muted-cell">${escapeHTML(u.email)}</td>
+          <td><label class="sr" for="role-${i}">Role for ${escapeHTML(u.name)}</label>
+            <select class="a-select" id="role-${i}" data-role="${i}" ${self ? "disabled" : ""}>
+              <option ${u.role === "Admin" ? "selected" : ""}>Admin</option><option ${u.role === "User" ? "selected" : ""}>User</option></select></td>
+          <td><span class="status ${u.active ? "ok" : "bad"}">${u.active ? "Active" : "Deactivated"}</span></td>
+          <td class="muted-cell">${escapeHTML(u.last)}</td>
+          <td style="text-align:right">${self ? '<span class="muted-cell" style="font-size:13px">Can’t change your own access</span>'
+            : `<button type="button" class="a-btn ghost sm" data-active="${i}">${u.active ? "Deactivate" : "Reactivate"}</button>`}</td></tr>`;
+      }).join("");
+    }
+    function userNotice(msg) { const n = $("user-notice"); n.textContent = msg; n.hidden = !msg; }
+    $("user-rows").addEventListener("change", e => {
+      const sel = e.target.closest("[data-role]"); if (!sel) return;
+      const u = state.users[+sel.dataset.role]; u.role = sel.value; save();
+      userNotice(`${u.name} is now ${u.role === "Admin" ? "an Admin" : "a User"}.`);
+    });
+    $("user-rows").addEventListener("click", e => {
+      const b = e.target.closest("[data-active]"); if (!b) return;
+      const u = state.users[+b.dataset.active]; u.active = !u.active; save(); renderUsers();
+      userNotice(u.active ? `${u.name} can sign in again.` : `${u.name} is deactivated and can no longer sign in.`);
+    });
+    function invite(e) {
+      e && e.preventDefault();
+      const name = $("inv-name").value.trim(), email = $("inv-email").value.trim(), err = $("inv-err");
+      let msg = "";
+      if (!name) msg = "Enter the person’s name.";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) msg = "Enter an email like name@example.com.";
+      else if (state.users.some(u => u.email.toLowerCase() === email.toLowerCase())) msg = "This person already has access.";
+      err.textContent = msg; err.hidden = !msg;
+      if (msg) return;
+      state.users.push({ name, email, role: $("inv-role").value, active: true, last: "Invited, not signed in yet" });
+      save(); renderUsers();
+      $("inv-name").value = ""; $("inv-email").value = "";
+      userNotice(`Invited ${name}. In the full app they’d get an email with a sign-in link.`);
+    }
+    $("invite-form").addEventListener("submit", invite);
+    $("inv-btn").addEventListener("click", invite);
+
+    // ── Theme ──
+    function applyTheme() {
+      appEl.classList.toggle("dark", state.theme === "dark");
+      $("theme-btn").textContent = state.theme === "dark" ? "Light theme" : "Dark theme";
+      $("theme-btn").setAttribute("aria-pressed", String(state.theme === "dark"));
+    }
+    $("theme-btn").addEventListener("click", () => { state.theme = state.theme === "dark" ? "light" : "dark"; applyTheme(); save(); });
+
+    // ── Enter / leave the app ──
+    function launchApp(name, email) {
+      role = /admin/i.test(email || "") ? "admin" : "user";
+      const display = name || email || "User";
+      me = { email: email || "" };
+      const existing = state.users.find(u => u.email.toLowerCase() === me.email.toLowerCase());
+      if (existing) { existing.last = "Now"; existing.active = true; existing.role = role === "admin" ? "Admin" : "User"; }
+      else state.users.unshift({ name: display, email: me.email, role: role === "admin" ? "Admin" : "User", active: true, last: "Now" });
+      save();
+      $("user-avatar").textContent = display.trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+      $("user-display-name").textContent = display;
+      $("user-display-role").textContent = role === "admin" ? "Admin" : "User";
+      document.querySelectorAll(".admin-only").forEach(el => el.hidden = role !== "admin");
+      landingEls.forEach(el => el.style.display = "none");
+      closeModal();
+      appEl.classList.add("visible");
+      document.body.style.overflow = "hidden";
+      applyTheme();
+      showPage("documents");
+    }
+    function exitApp() {
+      appEl.classList.remove("visible");
+      landingEls.forEach(el => el.style.display = "");
+      document.body.style.overflow = "";
+      window.scrollTo({ top: 0 });
+    }
+    $("signout-btn").addEventListener("click", exitApp);
+    $("app-logo-back").addEventListener("click", e => { e.preventDefault(); exitApp(); });
+    load();
+
+    // ── Demo sign-in / sign-up (button click as well as submit: sandboxed previews can block form submission) ──
+    function nameFromEmail(email) {
+      const local = (email.split("@")[0] || "User").replace(/[._-]+/g, " ").trim();
+      return local.replace(/\b\w/g, c => c.toUpperCase());
+    }
+    function demoSignIn(e) {
+      e && e.preventDefault();
+      const email = document.querySelector("#signin-form input[type=email]").value.trim() || "demo@example.com";
+      launchApp(nameFromEmail(email), email);
+    }
+    document.getElementById("signin-form").addEventListener("submit", demoSignIn);
+    document.querySelector("#signin-form .btn-submit").addEventListener("click", demoSignIn);
+    document.querySelectorAll("#signin-form input").forEach(inp => inp.addEventListener("keydown", e => { if (e.key === "Enter") demoSignIn(e); }));
+    function demoSignUp(e) {
+      e && e.preventDefault();
+      const form = document.querySelector("#signup-modal form");
+      const email = form.querySelector("input[type=email]").value.trim() || "demo@example.com";
+      const name = form.querySelector("input[type=text]").value.trim() || nameFromEmail(email);
+      launchApp(name, email);
+    }
+    document.querySelector("#signup-modal form").addEventListener("submit", demoSignUp);
+    document.querySelector("#signup-modal .btn-submit").addEventListener("click", demoSignUp);
+    document.querySelectorAll("#signup-modal input").forEach(inp => inp.addEventListener("keydown", e => { if (e.key === "Enter") demoSignUp(e); }));
+  </script>
+</body>
+</html>
