@@ -1,15 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageHeader } from "../components/AppLayout";
 import { SearchIcon } from "../components/Icons";
-import { documents, history, suggestions } from "../data/sample";
+import { suggestions } from "../data/sample";
+import { api } from "../api";
 
 export default function Ask() {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState("all");
+  const [docs, setDocs] = useState([]);
+  const [recentHistory, setRecentHistory] = useState([]);
   const navigate = useNavigate();
-  const ready = documents.filter((d) => d.status === "ready");
-  const passages = ready.reduce((s, d) => s + d.passages, 0);
+
+  useEffect(() => {
+    api.getDocuments().then((d) => setDocs(d || [])).catch(() => {});
+    api.getHistory().then((h) => setRecentHistory((h || []).slice(0, 3))).catch(() => {});
+  }, []);
+
+  const ready = docs.filter((d) => d.status === "ready");
+  const passages = ready.reduce((s, d) => s + (d.passages || 0), 0);
 
   const ask = (question) => {
     const text = (question ?? q).trim();
@@ -56,11 +65,15 @@ export default function Ask() {
         </section>
         <section className="flex flex-[1_1_280px] flex-col">
           <h2 className="mb-1.5 mt-0 text-[15px] font-semibold">Recent</h2>
-          {history.slice(0, 2).map((h) => (
-            <Link key={h.q} to={`/answer?q=${encodeURIComponent(h.q)}`} className="row-link flex justify-between gap-3 border-t border-rule py-3 text-[15px]">
-              <span>{h.q}</span><span className="whitespace-nowrap text-graphite">{h.when.replace("Today, ", "")}</span>
+          {recentHistory.map((h) => (
+            <Link key={h.id || h.question} to={`/answer?q=${encodeURIComponent(h.question)}`} className="row-link flex justify-between gap-3 border-t border-rule py-3 text-[15px]">
+              <span className="truncate">{h.question}</span>
+              <span className="whitespace-nowrap text-graphite text-xs">{h.asked_at ? new Date(h.asked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"}</span>
             </Link>
           ))}
+          {recentHistory.length === 0 && (
+            <p className="text-sm text-graphite py-2">No past questions yet.</p>
+          )}
           <Link to="/history" className="border-t border-rule py-3 text-[15px]">See all history</Link>
         </section>
       </div>

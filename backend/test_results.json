@@ -1,0 +1,201 @@
+{
+  "suite_name": "SearchLab.AI Full System Verification",
+  "timestamp": "2026-11-27T14:25:16Z",
+  "tests_run": 27,
+  "tests_passed": 27,
+  "tests_failed": 0,
+  "details": [
+    {
+      "test": "System Health Check",
+      "status": "PASS",
+      "message": "Status code 200",
+      "meta": {
+        "status": "healthy",
+        "app": "SearchLab.AI",
+        "environment": "development"
+      }
+    },
+    {
+      "test": "Auth - Weak Password Rejection",
+      "status": "PASS",
+      "message": "Correctly rejected <8 char password",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Admin Role Verification",
+      "status": "PASS",
+      "message": "Role assigned: admin",
+      "meta": {}
+    },
+    {
+      "test": "Auth - User 1 Registration",
+      "status": "PASS",
+      "message": "Registered user ID: c8a8a217-83d6-41cc-bb92-8aee210641ac",
+      "meta": {}
+    },
+    {
+      "test": "Auth - User 2 Registration",
+      "status": "PASS",
+      "message": "Registered user ID: 0b04663e-5cc7-4ea7-8a45-9c0a0715b2ed",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Duplicate Email Rejection",
+      "status": "PASS",
+      "message": "Duplicate email blocked",
+      "meta": {}
+    },
+    {
+      "test": "Auth - User Login",
+      "status": "PASS",
+      "message": "JWT issued on valid login",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Invalid Credentials Rejection",
+      "status": "PASS",
+      "message": "Rejected bad password with 401",
+      "meta": {}
+    },
+    {
+      "test": "Auth - /auth/me Token Session",
+      "status": "PASS",
+      "message": "Session restored from JWT",
+      "meta": {}
+    },
+    {
+      "test": "Documents - Processing & Status Ready",
+      "status": "PASS",
+      "message": "2 documents ready for User 1",
+      "meta": {}
+    },
+    {
+      "test": "Multi-Tenancy - Cross-User Deletion Block",
+      "status": "PASS",
+      "message": "User 2 cannot delete User 1's document (404 returned)",
+      "meta": {}
+    },
+    {
+      "test": "Multi-Tenancy - Semantic Search Isolation",
+      "status": "PASS",
+      "message": "User 2 cannot search or see User 1's private passages",
+      "meta": {}
+    },
+    {
+      "test": "RAG - SSE Protocol Events",
+      "status": "PASS",
+      "message": "Stream emitted sources, token, and done events",
+      "meta": {}
+    },
+    {
+      "test": "RAG - Source Disagreement Detection",
+      "status": "PASS",
+      "message": "Detected 1 policy conflict(s)",
+      "meta": [
+        {
+          "doc_a": "Document A",
+          "doc_b": "Document B",
+          "text_a": "All personnel must request leave at least 5 business days in advance through the HR portal.",
+          "text_b": "Interns must request leave at least 3 business days in advance by notifying their supervisor.",
+          "example_question": "How many days in advance should I request leave?"
+        }
+      ]
+    },
+    {
+      "test": "RAG - Grounded Answer Citations",
+      "status": "PASS",
+      "message": "Answer contains specific passage references or values",
+      "meta": {}
+    },
+    {
+      "test": "RAG - Relevance Threshold Gating (Not Found)",
+      "status": "PASS",
+      "message": "Correctly rejected out-of-scope question without hallucinating",
+      "meta": {}
+    },
+    {
+      "test": "History - Question History Persistence",
+      "status": "PASS",
+      "message": "Retrieved 2 past questions",
+      "meta": {}
+    },
+    {
+      "test": "History - Search Query Filtering",
+      "status": "PASS",
+      "message": "Filtered results: 1",
+      "meta": {}
+    },
+    {
+      "test": "Feedback - Record Thumbs Up/Down",
+      "status": "PASS",
+      "message": "Feedback recorded successfully",
+      "meta": {}
+    },
+    {
+      "test": "Documents - Cascade Deletion",
+      "status": "PASS",
+      "message": "Document and associated vector chunks removed",
+      "meta": {}
+    },
+    {
+      "test": "Documents - Deletion State Verified",
+      "status": "PASS",
+      "message": "Deleted document no longer returned in list",
+      "meta": {}
+    },
+    {
+      "test": "Admin - List Users",
+      "status": "PASS",
+      "message": "Total users: 44",
+      "meta": {}
+    },
+    {
+      "test": "Admin - Non-Admin RBAC Protection",
+      "status": "PASS",
+      "message": "Non-admin blocked with 403 Forbidden",
+      "meta": {}
+    },
+    {
+      "test": "Admin - Invite User",
+      "status": "PASS",
+      "message": "User invited with temp password",
+      "meta": {}
+    },
+    {
+      "test": "Evaluation - Benchmark Hit Rate (Target >= 80%)",
+      "status": "PASS",
+      "message": "Hit Rate: 100.0%",
+      "meta": {
+        "hit_rate": 1.0,
+        "target_met": true,
+        "faithfulness": 1.0,
+        "total_questions": 4,
+        "in_scope_evaluated": 2,
+        "hit_rate_percentage": 100.0,
+        "out_of_scope_evaluated": 2,
+        "out_of_scope_accuracy_percentage": 100.0
+      }
+    },
+    {
+      "test": "Evaluation - Faithfulness / Out-of-Scope (Target >= 90%)",
+      "status": "PASS",
+      "message": "Out-of-Scope Accuracy: 100.0%",
+      "meta": {
+        "hit_rate": 1.0,
+        "target_met": true,
+        "faithfulness": 1.0,
+        "total_questions": 4,
+        "in_scope_evaluated": 2,
+        "hit_rate_percentage": 100.0,
+        "out_of_scope_evaluated": 2,
+        "out_of_scope_accuracy_percentage": 100.0
+      }
+    },
+    {
+      "test": "Admin - Coverage Gaps Tracking",
+      "status": "PASS",
+      "message": "Unanswered: 4, Conflicts: 8",
+      "meta": {}
+    }
+  ]
+}

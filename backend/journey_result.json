@@ -1,0 +1,19 @@
+{
+  "user": {
+    "id": null,
+    "name": "Test User 521",
+    "email": "testuser_1795782521@searchlab.ai",
+    "password": "TestPassword2026!"
+  },
+  "document": {
+    "id": "59bb4396-3b1b-4b51-8941-dfa8424ed87b",
+    "title": "Corporate Travel & Expense Policy 2026.txt",
+    "status": "processing"
+  },
+  "query": {
+    "question": "How much can employees claim per day for meals?",
+    "answer": "\"Employees\"\" can\"\" claim\"\" up\"\" to\"\" $\"\"75\"\" per\"\" day\"\" for\"\" meals\"\"\\u202f\"\"[\"\"1\"\"].\"",
+    "sources_count": 1,
+    "latency_seconds": 3.15
+  }
+}

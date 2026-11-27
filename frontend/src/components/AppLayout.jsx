@@ -1,6 +1,7 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import { ChartIcon, DocIcon, HistoryIcon, SearchIcon, UsersIcon } from "./Icons";
+import { getUser, api } from "../api";
 
 const main = [
   { to: "/ask", label: "Ask", Icon: SearchIcon },
@@ -42,18 +43,31 @@ const headerGrid = {
 };
 
 export default function AppLayout() {
+  const navigate = useNavigate();
+  const currentUser = getUser();
+  const isAdmin = currentUser?.role === "admin";
+
+  const handleSignOut = async (e) => {
+    e.preventDefault();
+    await api.logout();
+    navigate("/");
+  };
+
   return (
     <div className="flex min-h-screen flex-wrap bg-paper text-ink">
       <nav aria-label="Main" className="flex flex-[1_1_210px] flex-col gap-7 border-r border-rule bg-[#E4E9E5] px-4 py-7">
         <div className="px-3 pb-1"><Logo size="sm" /></div>
         <div className="flex flex-col gap-0.5">{main.map((i) => <Item key={i.to} {...i} />)}</div>
-        <div className="flex flex-col gap-0.5">
-          <span className="px-3 pb-1.5 text-[13px] text-graphite">Admin</span>
-          {admin.map((i) => <Item key={i.to} {...i} />)}
-        </div>
+        {isAdmin && (
+          <div className="flex flex-col gap-0.5">
+            <span className="px-3 pb-1.5 text-[13px] text-graphite">Admin</span>
+            {admin.map((i) => <Item key={i.to} {...i} />)}
+          </div>
+        )}
         <div className="mt-auto flex flex-col gap-0.5 border-t border-rule px-2 pt-3.5">
-          <span className="text-sm font-medium">Akshit Sonkusale</span>
-          <Link to="/" className="text-sm">Sign out</Link>
+          <span className="text-sm font-medium">{currentUser?.name || "User"}</span>
+          <span className="text-xs text-graphite capitalize">{currentUser?.role || "user"}</span>
+          <button type="button" onClick={handleSignOut} className="text-left text-sm text-brand hover:underline p-0 bg-transparent border-none cursor-pointer mt-1">Sign out</button>
         </div>
       </nav>
       <main className="flex min-w-0 flex-[999_1_600px] flex-col gap-7 px-6 pb-14 pt-9 sm:pl-10 sm:pr-12" style={headerGrid}>

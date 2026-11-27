@@ -1,0 +1,139 @@
+{
+  "total": 22,
+  "passed": 22,
+  "failed": 0,
+  "results": [
+    {
+      "test": "Auth - Weak Password Rejection (<8 chars)",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Password Complexity Enforcement",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Max Password Length (Bcrypt DoS Guard)",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Auto-Admin Privilege Escalation Prevention",
+      "status": "PASS",
+      "message": "Role assigned: user (must be 'user')",
+      "meta": {}
+    },
+    {
+      "test": "Auth - User A & User B Isolation Setup",
+      "status": "PASS",
+      "message": "User A: db58c16f..., User B: 4ee1463a...",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Account Enumeration Resistance",
+      "status": "PASS",
+      "message": "Identical 401 error message for bad email vs bad password",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Logout Endpoint",
+      "status": "PASS",
+      "message": "Logout returned success",
+      "meta": {}
+    },
+    {
+      "test": "Auth - Token Invalidation After Logout",
+      "status": "PASS",
+      "message": "Revoked token rejected with 401",
+      "meta": {}
+    },
+    {
+      "test": "RBAC - Non-Admin Access Rejection",
+      "status": "PASS",
+      "message": "Status: 403 Forbidden",
+      "meta": {}
+    },
+    {
+      "test": "Upload Security - PDF Magic Byte Validation",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Upload Security - DOCX Magic Byte Validation",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Upload Security - Executable Renamed to TXT Blocked",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Upload Security - Empty File (0-byte) Rejection",
+      "status": "PASS",
+      "message": "Status: 400",
+      "meta": {}
+    },
+    {
+      "test": "Upload Security - Path Traversal Filename Sanitization",
+      "status": "PASS",
+      "message": "Sanitized name: passwd.txt",
+      "meta": {}
+    },
+    {
+      "test": "Upload - Valid Document Creation",
+      "status": "PASS",
+      "message": "Doc ID: c73fc004-55c4-4dfc-a7d5-4242a6f250bb",
+      "meta": {}
+    },
+    {
+      "test": "IDOR - Cross-Tenant Document Deletion Blocked",
+      "status": "PASS",
+      "message": "Status: 404 Not Found (No info leak)",
+      "meta": {}
+    },
+    {
+      "test": "IDOR - Cross-Tenant Signed Download URL Blocked",
+      "status": "PASS",
+      "message": "Status: 404 Not Found",
+      "meta": {}
+    },
+    {
+      "test": "IDOR - Cross-Tenant Document Scope Probe Blocked",
+      "status": "PASS",
+      "message": "Status: 404 Not Found",
+      "meta": {}
+    },
+    {
+      "test": "Cross-Tenant - Semantic Vector Search Isolation",
+      "status": "PASS",
+      "message": "User B search completed with zero access to User A's data",
+      "meta": {}
+    },
+    {
+      "test": "AI Security - Indirect Prompt Injection Defense",
+      "status": "PASS",
+      "message": "Model adhered to grounded role and did not execute embedded overrides",
+      "meta": {}
+    },
+    {
+      "test": "Security Headers - Production Headers Active",
+      "status": "PASS",
+      "message": "nosniff: True, DENY: True, xss: True, referrer: True",
+      "meta": {}
+    },
+    {
+      "test": "Rate Limiting - Sliding Window Brute Force Throttling",
+      "status": "PASS",
+      "message": "HTTP 429 Too Many Requests triggered on rapid requests",
+      "meta": {}
+    }
+  ]
+}
